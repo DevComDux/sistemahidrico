@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validação · AESBE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ----- Reset & Globais ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        :root {
+            --primary-blue: #0a2558;
+            --primary-blue-light: #1a4c8d;
+            --primary-blue-bg: #eef3fc;
+            --primary-gradient: linear-gradient(145deg, #071d47, #12356e);
+            --text-dark: #142433;
+            --text-muted: #4c617b;
+            --border-light: #e3eaf2;
+            --shadow-card: 0 16px 48px -12px rgba(0, 20, 50, 0.20);
+            --radius-card: 24px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            --color-success: #27ae60;
+            --color-success-bg: #e8f7ee;
+            --color-warning: #e67e22;
+            --color-warning-bg: #fdf3e8;
+            --color-danger: #e74c3c;
+            --color-danger-bg: #fdeceb;
+            --color-info: #3498db;
+            --color-info-bg: #eaf4fc;
+
+            /* Cores do balanço */
+            --color-volume: #dde3ed;
+            --color-consumo: #c6dbf5;
+            --color-faturado: #4f8fd9;
+            --color-nao-faturado: #f7d9c0;
+            --color-perdas-aparentes: #f3c8c8;
+            --color-perdas-reais: #d1b3d6;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            width: 100%;
+            max-width: 1600px;
+            min-height: 88vh;
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 16px;
+            gap: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 240px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-card);
+            padding: 28px 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-card);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .logo-area .brand {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .logo-area .sub {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .logo-area .prestador {
+            margin-top: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-blue-light);
+            background: var(--primary-blue-bg);
+            padding: 6px 20px;
+            border-radius: 40px;
+            display: inline-block;
+            border: 1px solid rgba(26, 76, 141, 0.08);
+        }
+
+        .nav-menu {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item i {
+            width: 26px;
+            font-size: 1.05rem;
+            margin-right: 14px;
+            color: inherit;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+        }
+
+        .nav-item.active {
+            background: var(--primary-blue);
+            color: #fff;
+            box-shadow: 0 8px 20px -6px rgba(10, 37, 88, 0.3);
+        }
+
+        .nav-item.active i {
+            color: #fff;
+        }
+
+        .btn-clear-filters {
+            background: var(--primary-blue-bg);
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            width: 100%;
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 18px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 1px solid transparent;
+        }
+
+        .btn-clear-filters:hover {
+            background: #d7e1f2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(10, 37, 88, 0.08);
+            border-color: var(--primary-blue-light);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            padding: 14px 28px;
+            border-radius: var(--radius-card);
+            flex-wrap: wrap;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .title-area h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.4px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+        }
+
+        .title-area p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 400;
+        }
+
+        .top-bar-stats {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-pill.pending { color: var(--color-warning); background: #fff7ee; }
+        .stat-pill.approved { color: var(--color-success); background: #eefaf3; }
+        .stat-pill.rejected { color: var(--color-danger); background: #fdeeed; }
+
+        /* ===== CARD PRINCIPAL ===== */
+        .card-matrix {
+            flex: 1;
+            background: #fff;
+            border-radius: var(--radius-card);
+            padding: 24px 28px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== TABS ===== */
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--primary-blue-bg);
+            padding: 4px;
+            border-radius: 16px;
+        }
+
+        .chart-tab {
+            padding: 8px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: var(--transition);
+            font-size: 0.85rem;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-tab .badge {
+            background: rgba(10, 37, 88, 0.1);
+            color: var(--primary-blue);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .chart-tab.active {
+            background: #fff;
+            color: var(--primary-blue);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .chart-tab.active .badge {
+            background: var(--primary-blue);
+            color: #fff;
+        }
+
+        /* ===== AÇÕES EM LOTE ===== */
+        .batch-actions { display: flex; align-items: center; gap: 10px; }
+
+        .btn-action {
+            padding: 8px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-approve {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+            border: 1px solid rgba(39, 174, 96, 0.25);
+        }
+
+        .btn-approve:hover:not(:disabled) {
+            background: var(--color-success);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.25);
+        }
+
+        .btn-reject {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border: 1px solid rgba(231, 76, 60, 0.25);
+        }
+
+        .btn-reject:hover:not(:disabled) {
+            background: var(--color-danger);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.25);
+        }
+
+        /* ===== LISTA DE VALIDAÇÕES ===== */
+        .validation-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .validation-list::-webkit-scrollbar { width: 6px; }
+        .validation-list::-webkit-scrollbar-thumb {
+            background: var(--primary-blue-light);
+            border-radius: 10px;
+        }
+
+        .validation-item {
+            background: #fff;
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .validation-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-warning);
+        }
+
+        .validation-item.status-aprovado::before { background: var(--color-success); }
+        .validation-item.status-rejeitado::before { background: var(--color-danger); }
+
+        .validation-item:hover {
+            box-shadow: 0 8px 24px -8px rgba(10, 37, 88, 0.12);
+            border-color: var(--primary-blue-light);
+            transform: translateX(2px);
+        }
+
+        .validation-item .check-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .validation-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary-blue);
+        }
+
+        .validation-item .item-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: var(--primary-blue-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .validation-item .item-icon i {
+            font-size: 1.3rem;
+            color: var(--primary-blue);
+        }
+
+        .validation-item .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .validation-item .item-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .validation-item .item-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .validation-item .item-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .validation-item .item-meta i {
+            font-size: 0.75rem;
+            color: var(--primary-blue-light);
+            opacity: 0.7;
+        }
+
+        .validation-item .item-values {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            min-width: 130px;
+            flex-shrink: 0;
+        }
+
+        .validation-item .value-main {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .validation-item .value-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+        }
+
+        .validation-item .item-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-icon-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .btn-icon-action:hover {
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+            border-color: var(--primary-blue-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-icon-action.approve:hover {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .btn-icon-action.reject:hover {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-badge.pendente { background: var(--color-warning-bg); color: var(--color-warning); }
+        .status-badge.aprovado { background: var(--color-success-bg); color: var(--color-success); }
+        .status-badge.rejeitado { background: var(--color-danger-bg); color: var(--color-danger); }
+
+        /* Justificativa exibida abaixo do item quando existir */
+        .item-justificativa {
+            margin-top: 8px;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-left: 3px solid var(--primary-blue-light);
+            border-radius: 6px;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .item-justificativa i {
+            color: var(--primary-blue-light);
+            margin-top: 2px;
+        }
+
+        .item-justificativa .j-label {
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* ===== ESTADO VAZIO ===== */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            color: var(--primary-blue-light);
+            opacity: 0.25;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+            margin-bottom: 6px;
+        }
+
+        /* ===== RIGHT SIDEBAR ===== */
+        .right-sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-card);
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-card);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            gap: 16px;
+            max-height: 100%;
+            overflow-y: auto;
+        }
+
+        .right-sidebar::-webkit-scrollbar { width: 4px; }
+        .right-sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-blue-light);
+            border-radius: 10px;
+        }
+
+        .filter-group {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-light);
+        }
+
+        .filter-group-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .filter-option:hover {
+            background: rgba(10, 37, 88, 0.04);
+            color: var(--primary-blue);
+        }
+
+        .filter-option input[type="radio"] {
+            accent-color: var(--primary-blue);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .filter-option.checked {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .info-field:last-child { border-bottom: none; }
+
+        .info-field-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            font-weight: 600;
+        }
+
+        .info-field-value {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .info-field-value.empty {
+            color: #a0b3c9;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #fff;
+            padding: 16px 24px;
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            border-left: 4px solid var(--primary-blue);
+            max-width: 420px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast i { font-size: 1.4rem; color: var(--primary-blue); }
+
+        .toast .toast-content { display: flex; flex-direction: column; }
+        .toast .toast-title { font-weight: 600; color: var(--text-dark); font-size: 0.9rem; }
+        .toast .toast-message { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* ==================================================
+           MODAIS
+           ================================================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 20, 47, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 24px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 1280px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.modal-sm { max-width: 520px; }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 28px;
+            border-bottom: 2px solid var(--border-light);
+            background: linear-gradient(135deg, var(--primary-blue-bg), #fff);
+            flex-shrink: 0;
+        }
+
+        .modal-header .mh-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-header .mh-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--primary-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .modal-header .mh-icon.success { background: var(--color-success); }
+        .modal-header .mh-icon.danger { background: var(--color-danger); }
+
+        .modal-header h2 {
+            font-size: 1.15rem;
+            color: var(--primary-blue);
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .modal-header .mh-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .modal-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .modal-close:hover {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+        }
+
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary-blue-light);
+            border-radius: 10px;
+        }
+
+        .modal-footer {
+            padding: 16px 28px;
+            border-top: 2px solid var(--border-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #f8fafc;
+            flex-shrink: 0;
+        }
+
+        .modal-btn {
+            padding: 10px 22px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .modal-btn.secondary {
+            background: #fff;
+            color: var(--text-muted);
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+            border-color: var(--primary-blue-light);
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-blue);
+            color: #fff;
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--primary-blue-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(10, 37, 88, 0.25);
+        }
+
+        .modal-btn.success {
+            background: var(--color-success);
+            color: #fff;
+        }
+
+        .modal-btn.success:hover {
+            background: #219150;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+        }
+
+        .modal-btn.danger {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        .modal-btn.danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.3);
+        }
+
+        /* Info resumida do registro (topo do modal) */
+        .reg-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--primary-blue-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .reg-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .reg-info-item .ri-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .reg-info-item .ri-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Mini matriz no modal */
+        .modal-matrix {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.15fr 1.35fr 0.55fr 1fr;
+            grid-template-rows: repeat(11, 62px);
+            gap: 0;
+            border: 2px solid var(--border-light);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+            margin-top: 12px;
+        }
+
+        .modal-matrix .matrix-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .modal-matrix .label-main {
+            font-size: clamp(0.48rem, 0.62vw, 0.65rem);
+            font-weight: 600;
+            line-height: 1.15;
+            color: #1a2d44;
+            text-transform: uppercase;
+        }
+
+        .modal-matrix .main-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 2px 0 1px;
+            color: #0b1a33;
+            line-height: 1.15;
+        }
+
+        .modal-matrix .sub-value {
+            font-size: 0.6rem;
+            color: #2a4058;
+            line-height: 1.1;
+        }
+
+        .modal-matrix .pct-value {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .modal-matrix .label-sub {
+            font-size: 0.55rem;
+            color: #4a617c;
+            text-transform: uppercase;
+        }
+
+        .modal-matrix .bg-volume { background: var(--color-volume); }
+        .modal-matrix .bg-consumo { background: var(--color-consumo); }
+        .modal-matrix .bg-nao-faturado { background: var(--color-nao-faturado); }
+        .modal-matrix .bg-perdas-aparentes { background: var(--color-perdas-aparentes); }
+        .modal-matrix .bg-perdas-reais { background: var(--color-perdas-reais); color: #fff; }
+        .modal-matrix .bg-perdas-reais .main-value,
+        .modal-matrix .bg-perdas-reais .sub-value,
+        .modal-matrix .bg-perdas-reais .label-main,
+        .modal-matrix .bg-perdas-reais .pct-value { color: #fff; }
+        .modal-matrix .bg-white { background: #fff; }
+        .modal-matrix .bg-total-faturado { background: #3a7fc7; color: #fff; }
+        .modal-matrix .bg-total-faturado .main-value,
+        .modal-matrix .bg-total-faturado .sub-value,
+        .modal-matrix .bg-total-faturado .label-main,
+        .modal-matrix .bg-total-faturado .pct-value { color: #fff; }
+        .modal-matrix .bg-total-nao-faturado { background: #c97a7a; color: #fff; }
+        .modal-matrix .bg-total-nao-faturado .main-value,
+        .modal-matrix .bg-total-nao-faturado .sub-value,
+        .modal-matrix .bg-total-nao-faturado .label-main,
+        .modal-matrix .bg-total-nao-faturado .pct-value { color: #fff; }
+        .modal-matrix .bg-percentual { background: #faf5e8; }
+
+        /* Textarea de justificativa */
+        .field-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+
+        .field-label .required { color: #e74c3c; }
+
+        .field-textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 12px 14px;
+            border: 2px solid #d0dbe8;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: var(--transition);
+            color: var(--text-dark);
+            background: #fff;
+        }
+
+        .field-textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(10, 37, 88, 0.1);
+        }
+
+        .field-hint {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width: 1400px) {
+            .dashboard-container { flex-direction: column; min-height: auto; }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                padding: 16px 24px;
+                gap: 12px;
+            }
+            .right-sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                padding: 16px 24px;
+                gap: 16px;
+            }
+            .filter-group { flex: 1; min-width: 150px; }
+            .logo-area {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+                flex: 1;
+                min-width: 180px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            .logo-area .brand { font-size: 1.8rem; }
+            .logo-area .prestador { margin-top: 0; }
+            .nav-menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 4px;
+                flex: 1;
+                justify-content: flex-end;
+            }
+            .nav-item { padding: 8px 14px; font-size: 0.8rem; }
+            .btn-clear-filters { width: auto; padding: 8px 20px; margin-top: 0; }
+        }
+
+        @media (max-width: 900px) {
+            .top-bar { flex-direction: column; align-items: stretch; }
+            .chart-controls { flex-direction: column; align-items: stretch; }
+            .chart-tabs { justify-content: center; flex-wrap: wrap; }
+            .batch-actions { justify-content: center; }
+            .validation-item { flex-wrap: wrap; }
+            .validation-item .item-values {
+                align-items: flex-start;
+                min-width: auto;
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px dashed var(--border-light);
+            }
+            .modal-matrix {
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-rows: auto;
+            }
+        }
+
+        @media (max-width: 550px) {
+            body { padding: 12px; }
+            .dashboard-container { padding: 10px; border-radius: 24px; }
+            .sidebar, .right-sidebar { flex-direction: column; padding: 16px; }
+            .logo-area { flex-direction: column; align-items: center; }
+            .nav-menu { justify-content: center; }
+            .btn-clear-filters { width: 100%; }
+            .card-matrix { padding: 16px; }
+            .title-area h1 { font-size: 1.3rem; }
+            .toast { bottom: 16px; right: 16px; left: 16px; padding: 14px 18px; }
+            .modal-overlay { padding: 12px; }
+            .modal-header { padding: 16px 18px; }
+            .modal-body { padding: 18px; }
+            .modal-footer { padding: 12px 18px; flex-direction: column; }
+            .modal-btn { width: 100%; justify-content: center; }
+            .modal-matrix {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <div>
+                    <div class="brand">ANA</div>
+                    <div class="sub">AGÊNCIA NACIONAL DE ÁGUAS</div>
+                    <div class="sub">E SANEAMENTO BÁSICO</div>
+                </div>
+                <div class="prestador">UnB</div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item"><i class="fas fa-home"></i> Início</a>
+                <a href="balanco-hidrico.html" class="nav-item"><i class="fas fa-chart-simple"></i> Balanço Hídrico</a>
+                <a href="validacao.html" class="nav-item active"><i class="fas fa-check-circle"></i> Validação</a>
+                <a href="cidades.html" class="nav-item"><i class="fas fa-city"></i> Cidades</a>
+                <a href="#" class="nav-item"><i class="fas fa-map-location-dot"></i> Mapa</a>
+                <a href="#" class="nav-item"><i class="fas fa-info-circle"></i> Informações</a>
+            </nav>
+
+            <button class="btn-clear-filters" id="btnResetAll"><i class="fas fa-undo-alt"></i> Limpar filtros</button>
+        </aside>
+
+        <!-- ===== MAIN ===== -->
+        <main class="main-content">
+
+            <header class="top-bar">
+                <div class="title-area">
+                    <h1>Validação de Dados</h1>
+                    <p>Verifique, aprove ou rejeite os registros enviados</p>
+                </div>
+                <div class="top-bar-stats">
+                    <span class="stat-pill pending">
+                        <i class="fas fa-clock"></i> <span id="statPending">0</span> Pendentes
+                    </span>
+                    <span class="stat-pill approved">
+                        <i class="fas fa-check"></i> <span id="statApproved">0</span> Aprovados
+                    </span>
+                    <span class="stat-pill rejected">
+                        <i class="fas fa-times"></i> <span id="statRejected">0</span> Rejeitados
+                    </span>
+                </div>
+            </header>
+
+            <section class="card-matrix">
+                <div class="chart-controls">
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" data-status="pendente">
+                            <i class="fas fa-clock"></i> Pendentes
+                            <span class="badge" id="badgePending">0</span>
+                        </button>
+                        <button class="chart-tab" data-status="aprovado">
+                            <i class="fas fa-check"></i> Aprovados
+                            <span class="badge" id="badgeApproved">0</span>
+                        </button>
+                        <button class="chart-tab" data-status="rejeitado">
+                            <i class="fas fa-times"></i> Rejeitados
+                            <span class="badge" id="badgeRejected">0</span>
+                        </button>
+                    </div>
+
+                    <div class="batch-actions">
+                        <button class="btn-action btn-approve" id="btnBatchApprove" disabled>
+                            <i class="fas fa-check-double"></i> Aprovar selecionados
+                        </button>
+                        <button class="btn-action btn-reject" id="btnBatchReject" disabled>
+                            <i class="fas fa-times-circle"></i> Rejeitar selecionados
+                        </button>
+                    </div>
+                </div>
+
+                <div class="validation-list" id="validationList">
+                    <!-- Itens renderizados via JS -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ===== RIGHT SIDEBAR ===== -->
+        <aside class="right-sidebar">
+
+            <div class="filter-group">
+                <div class="filter-group-title">Status</div>
+                <div class="filter-options">
+                    <label class="filter-option checked">
+                        <input type="radio" name="statusFiltro" value="pendente" checked>
+                        Pendentes
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="statusFiltro" value="aprovado">
+                        Aprovados
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="statusFiltro" value="rejeitado">
+                        Rejeitados
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">Resumo</div>
+                <div class="info-field">
+                    <span class="info-field-label">Total de registros</span>
+                    <span class="info-field-value" id="summaryTotal">0</span>
+                </div>
+                <div class="info-field">
+                    <span class="info-field-label">Taxa de aprovação</span>
+                    <span class="info-field-value" id="summaryRate">0%</span>
+                </div>
+                <div class="info-field">
+                    <span class="info-field-label">Aguardando análise</span>
+                    <span class="info-field-value empty" id="summaryWaiting">—</span>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- ==================================================
+         MODAL — VISUALIZAR BALANÇO HÍDRICO
+         ================================================== -->
+    <div class="modal-overlay" id="modalVisualizar">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="mh-title">
+                    <div class="mh-icon"><i class="fas fa-chart-simple"></i></div>
+                    <div>
+                        <h2>Balanço Hídrico — <span id="modalViewLocal">—</span></h2>
+                        <div class="mh-sub" id="modalViewPrestador">—</div>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalVisualizar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="reg-info">
+                    <div class="reg-info-item">
+                        <span class="ri-label">Empresa / Prestador</span>
+                        <span class="ri-value" id="mvPrestador">—</span>
+                    </div>
+                    <div class="reg-info-item">
+                        <span class="ri-label">Estado</span>
+                        <span class="ri-value" id="mvEstado">—</span>
+                    </div>
+                    <div class="reg-info-item">
+                        <span class="ri-label">Município / RA</span>
+                        <span class="ri-value" id="mvMunicipio">—</span>
+                    </div>
+                    <div class="reg-info-item">
+                        <span class="ri-label">Ano</span>
+                        <span class="ri-value" id="mvAno">—</span>
+                    </div>
+                    <div class="reg-info-item">
+                        <span class="ri-label">Data de Envio</span>
+                        <span class="ri-value" id="mvData">—</span>
+                    </div>
+                    <div class="reg-info-item">
+                        <span class="ri-label">Volume de Entrada</span>
+                        <span class="ri-value" id="mvVolume">—</span>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 0.78rem; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; font-weight: 700;">
+                    Matriz do Balanço Hídrico
+                </h3>
+
+                <div class="modal-matrix" id="modalMatrix">
+                    <!-- Preenchido via JS -->
+                </div>
+
+                <div id="modalJustificativaBox" style="display:none; margin-top: 20px;">
+                    <span class="field-label"><i class="fas fa-comment-dots"></i> Justificativa registrada</span>
+                    <div class="item-justificativa">
+                        <i class="fas fa-quote-left"></i>
+                        <div><span class="j-label" id="mvJustLabel"></span> <span id="mvJustText"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn secondary" data-close="modalVisualizar">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+                <button class="modal-btn danger" id="mvBtnReject" style="display:none;">
+                    <i class="fas fa-times-circle"></i> Rejeitar
+                </button>
+                <button class="modal-btn success" id="mvBtnApprove" style="display:none;">
+                    <i class="fas fa-check-circle"></i> Aprovar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================
+         MODAL — JUSTIFICATIVA (APROVAR / REJEITAR)
+         ================================================== -->
+    <div class="modal-overlay" id="modalJustificativa">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <div class="mh-title">
+                    <div class="mh-icon" id="mjIcon"><i class="fas fa-comment-dots"></i></div>
+                    <div>
+                        <h2 id="mjTitle">Justificativa</h2>
+                        <div class="mh-sub" id="mjSub">—</div>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalJustificativa">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <label class="field-label" for="mjTextarea">
+                    <i class="fas fa-pen"></i> Descreva o motivo da ação <span class="required">*</span>
+                </label>
+                <textarea class="field-textarea" id="mjTextarea"
+                    placeholder="Ex: Dados consistentes com o SNIS. / Divergência nos valores de perdas aparentes em relação ao relatório anterior."></textarea>
+                <div class="field-hint">
+                    <i class="fas fa-info-circle"></i>
+                    <span>A justificativa é obrigatória e ficará registrada no histórico da validação.</span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn secondary" data-close="modalJustificativa">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="modal-btn primary" id="mjBtnConfirm">
+                    <i class="fas fa-paper-plane"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <div class="toast-content">
+            <span class="toast-title">Pronto!</span>
+            <span class="toast-message" id="toastMessage">Operação realizada com sucesso.</span>
+        </div>
+    </div>
+
+    <script>
+        // ======================================================
+        // CONSTANTES
+        // ======================================================
+
+        const ESTADOS_NOMES = {
+            AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia',
+            CE: 'Ceará', DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás',
+            MA: 'Maranhão', MT: 'Mato Grosso', MS: 'Mato Grosso do Sul', MG: 'Minas Gerais',
+            PA: 'Pará', PB: 'Paraíba', PR: 'Paraná', PE: 'Pernambuco', PI: 'Piauí',
+            RJ: 'Rio de Janeiro', RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul',
+            RO: 'Rondônia', RR: 'Roraima', SC: 'Santa Catarina', SP: 'São Paulo',
+            SE: 'Sergipe', TO: 'Tocantins'
+        };
+
+        const REGIOES_POR_ESTADO = {
+            AC: 'Norte', AP: 'Norte', AM: 'Norte', PA: 'Norte', RO: 'Norte', RR: 'Norte', TO: 'Norte',
+            AL: 'Nordeste', BA: 'Nordeste', CE: 'Nordeste', MA: 'Nordeste', PB: 'Nordeste',
+            PE: 'Nordeste', PI: 'Nordeste', RN: 'Nordeste', SE: 'Nordeste',
+            DF: 'Centro-Oeste', GO: 'Centro-Oeste', MT: 'Centro-Oeste', MS: 'Centro-Oeste',
+            ES: 'Sudeste', MG: 'Sudeste', RJ: 'Sudeste', SP: 'Sudeste',
+            PR: 'Sul', RS: 'Sul', SC: 'Sul'
+        };
+
+        // Pesos literários usados para distribuir proporcionalmente
+        // as subdivisões dentro de Perdas Aparentes e Perdas Reais.
+        const PESOS_LITERARIOS = {
+            submedicao: 4.48,
+            clandestinos: 1.30,
+            fraudes: 0.36,
+            vazamentosRamais: 19.82,
+            vazamentosRedes: 4.50,
+            vazamentosReservatorios: 0.46
+        };
+
+        const PESO_TOTAL_AP =
+            PESOS_LITERARIOS.submedicao +
+            PESOS_LITERARIOS.clandestinos +
+            PESOS_LITERARIOS.fraudes;         // 6.14
+
+        const PESO_TOTAL_PR =
+            PESOS_LITERARIOS.vazamentosRamais +
+            PESOS_LITERARIOS.vazamentosRedes +
+            PESOS_LITERARIOS.vazamentosReservatorios; // 24.78
+
+        // ======================================================
+        // UTILITÁRIOS
+        // ======================================================
+
+        const formatNumber = (num) =>
+            (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+        // ======================================================
+        // TOAST
+        // ======================================================
+
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastTitle = toast.querySelector('.toast-title');
+        const toastIcon = toast.querySelector('i');
+
+        function showToast(type, title, message) {
+            const config = {
+                success: { icon: 'fa-check-circle', color: 'var(--color-success)' },
+                warning: { icon: 'fa-exclamation-triangle', color: 'var(--color-warning)' },
+                error:   { icon: 'fa-exclamation-circle',   color: 'var(--color-danger)' },
+                info:    { icon: 'fa-info-circle',          color: 'var(--color-info)' }
+            }[type] || { icon: 'fa-check-circle', color: 'var(--primary-blue)' };
+
+            toastIcon.className = 'fas ' + config.icon;
+            toastIcon.style.color = config.color;
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        // ======================================================
+        // LOCALSTORAGE
+        // ======================================================
+
+        function getFilaValidacao() {
+            try { return JSON.parse(localStorage.getItem('validacaoData') || '[]'); }
+            catch { return []; }
+        }
+
+        function setFilaValidacao(fila) {
+            localStorage.setItem('validacaoData', JSON.stringify(fila));
+        }
+
+        function getAprovados() {
+            try { return JSON.parse(localStorage.getItem('balancoHidricoHistory') || '[]'); }
+            catch { return []; }
+        }
+
+        function setAprovados(lista) {
+            localStorage.setItem('balancoHidricoHistory', JSON.stringify(lista));
+        }
+
+        // ======================================================
+        // ESTADO
+        // ======================================================
+
+        let currentFilter = 'pendente';
+        let validationData = getFilaValidacao();
+
+        // ======================================================
+        // RENDERIZAÇÃO DA LISTA
+        // ======================================================
+
+        const validationList = document.getElementById('validationList');
+
+        function renderList() {
+            validationData = getFilaValidacao();
+            const filtered = validationData.filter(item => item.status === currentFilter);
+
+            validationList.innerHTML = '';
+
+            if (filtered.length === 0) {
+                const emptyMessages = {
+                    pendente: { icon: 'fa-clipboard-check', title: 'Nenhum registro pendente', text: 'Todos os dados foram validados. Bom trabalho!' },
+                    aprovado: { icon: 'fa-check-double', title: 'Nenhum registro aprovado', text: 'Ainda não há dados aprovados para este filtro.' },
+                    rejeitado: { icon: 'fa-ban', title: 'Nenhum registro rejeitado', text: 'Nenhum dado foi rejeitado até o momento.' }
+                };
+                const msg = emptyMessages[currentFilter];
+                validationList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas ${msg.icon}"></i>
+                        <h3>${msg.title}</h3>
+                        <p>${msg.text}</p>
+                    </div>
+                `;
+                updateStats();
+                updateBatchButtons();
+                return;
+            }
+
+            filtered.forEach(item => {
+                const d = item.data || item;
+                const el = document.createElement('div');
+                el.className = 'validation-item status-' + item.status;
+                el.dataset.id = item.id;
+
+                const statusLabel = {
+                    pendente: '<span class="status-badge pendente"><i class="fas fa-clock"></i> Pendente</span>',
+                    aprovado: '<span class="status-badge aprovado"><i class="fas fa-check"></i> Aprovado</span>',
+                    rejeitado: '<span class="status-badge rejeitado"><i class="fas fa-times"></i> Rejeitado</span>'
+                }[item.status];
+
+                const actionsHTML = item.status === 'pendente' ? `
+                    <button class="btn-icon-action approve" title="Aprovar" data-action="approve" data-id="${item.id}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn-icon-action reject" title="Rejeitar" data-action="reject" data-id="${item.id}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                ` : '';
+
+                let justHTML = '';
+                if (item.justificativa) {
+                    const label = item.status === 'aprovado' ? 'Aprovação' : 'Rejeição';
+                    justHTML = `
+                        <div class="item-justificativa">
+                            <i class="fas fa-quote-left"></i>
+                            <div><span class="j-label">${label}:</span> ${item.justificativa}</div>
+                        </div>
+                    `;
+                }
+
+                const volumeEntrada = d._volumeEntrada || item.volumeEntrada || 0;
+                const perdasPct = d._perdasPct || item.perdas || 0;
+
+                el.innerHTML = `
+                    <div class="check-wrap">
+                        <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${item.status !== 'pendente' ? 'disabled' : ''}>
+                    </div>
+                    <div class="item-icon">
+                        <i class="fas fa-city"></i>
+                    </div>
+                    <div class="item-info">
+                        <div class="item-title">
+                            ${item.municipio || d.municipio || '—'} / ${item.estado || d.estado || '—'}
+                            ${statusLabel}
+                        </div>
+                        <div class="item-meta">
+                            <span><i class="fas fa-building"></i> ${item.prestador || d.prestador || '—'}</span>
+                            <span><i class="fas fa-calendar"></i> ${new Date(item.dataEnvio || d.dataPreenchimento || Date.now()).toLocaleDateString('pt-BR')}</span>
+                            <span><i class="fas fa-percent"></i> Perdas: ${Number(perdasPct).toFixed(1)}%</span>
+                        </div>
+                        ${justHTML}
+                    </div>
+                    <div class="item-values">
+                        <span class="value-label">Volume de Entrada</span>
+                        <span class="value-main">${formatNumber(volumeEntrada)} m³</span>
+                    </div>
+                    <div class="item-actions">
+                        ${actionsHTML}
+                    </div>
+                `;
+
+                el.addEventListener('click', function (e) {
+                    if (e.target.closest('button') || e.target.closest('input')) return;
+                    abrirModalVisualizar(item.id);
+                });
+
+                validationList.appendChild(el);
+            });
+
+            validationList.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateBatchButtons);
+            });
+
+            validationList.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const id = parseInt(this.dataset.id);
+                    const action = this.dataset.action;
+                    if (action === 'approve') abrirModalJustificativa(id, 'aprovar');
+                    else if (action === 'reject') abrirModalJustificativa(id, 'rejeitar');
+                });
+            });
+
+            updateStats();
+            updateBatchButtons();
+        }
+
+        // ======================================================
+        // AÇÕES — APROVAR / REJEITAR
+        // ======================================================
+
+        function aprovarRegistro(id, justificativa) {
+            const fila = getFilaValidacao();
+            const item = fila.find(i => i.id === id);
+            if (!item) return;
+
+            item.status = 'aprovado';
+            item.justificativa = justificativa;
+            item.dataValidacao = new Date().toISOString();
+
+            setFilaValidacao(fila);
+
+            const aprovados = getAprovados();
+            const jaExiste = aprovados.some(a => a.id === id);
+            if (!jaExiste) {
+                aprovados.unshift({
+                    id: item.id,
+                    timestamp: new Date().toISOString(),
+                    data: item.data || item,
+                    justificativa: justificativa
+                });
+                setAprovados(aprovados);
+            }
+
+            showToast('success', 'Aprovado!', `${item.municipio}/${item.estado} aprovado e disponível no Balanço Hídrico.`);
+            renderList();
+        }
+
+        function rejeitarRegistro(id, justificativa) {
+            const fila = getFilaValidacao();
+            const item = fila.find(i => i.id === id);
+            if (!item) return;
+
+            item.status = 'rejeitado';
+            item.justificativa = justificativa;
+            item.dataValidacao = new Date().toISOString();
+
+            setFilaValidacao(fila);
+
+            showToast('warning', 'Rejeitado!', `${item.municipio}/${item.estado} foi rejeitado (decisão definitiva).`);
+            renderList();
+        }
+
+        function aprovarLote(ids, justificativa) {
+            ids.forEach(id => {
+                const fila = getFilaValidacao();
+                const item = fila.find(i => i.id === id);
+                if (!item) return;
+
+                item.status = 'aprovado';
+                item.justificativa = justificativa;
+                item.dataValidacao = new Date().toISOString();
+                setFilaValidacao(fila);
+
+                const aprovados = getAprovados();
+                const jaExiste = aprovados.some(a => a.id === id);
+                if (!jaExiste) {
+                    aprovados.unshift({
+                        id: item.id,
+                        timestamp: new Date().toISOString(),
+                        data: item.data || item,
+                        justificativa: justificativa
+                    });
+                    setAprovados(aprovados);
+                }
+            });
+
+            showToast('success', 'Ação em lote', `${ids.length} registro(s) aprovado(s).`);
+            renderList();
+        }
+
+        function rejeitarLote(ids, justificativa) {
+            ids.forEach(id => {
+                const fila = getFilaValidacao();
+                const item = fila.find(i => i.id === id);
+                if (!item) return;
+
+                item.status = 'rejeitado';
+                item.justificativa = justificativa;
+                item.dataValidacao = new Date().toISOString();
+                setFilaValidacao(fila);
+            });
+
+            showToast('warning', 'Ação em lote', `${ids.length} registro(s) rejeitado(s).`);
+            renderList();
+        }
+
+        // ======================================================
+        // CONTADORES E RESUMO
+        // ======================================================
+
+        function updateStats() {
+            const counts = {
+                pendente: validationData.filter(i => i.status === 'pendente').length,
+                aprovado: validationData.filter(i => i.status === 'aprovado').length,
+                rejeitado: validationData.filter(i => i.status === 'rejeitado').length
+            };
+
+            document.getElementById('badgePending').textContent = counts.pendente;
+            document.getElementById('badgeApproved').textContent = counts.aprovado;
+            document.getElementById('badgeRejected').textContent = counts.rejeitado;
+
+            document.getElementById('statPending').textContent = counts.pendente;
+            document.getElementById('statApproved').textContent = counts.aprovado;
+            document.getElementById('statRejected').textContent = counts.rejeitado;
+
+            const total = validationData.length;
+            const rate = total > 0 ? ((counts.aprovado / total) * 100).toFixed(1) : 0;
+            document.getElementById('summaryTotal').textContent = total;
+            document.getElementById('summaryRate').textContent = rate + '%';
+
+            const waitingEl = document.getElementById('summaryWaiting');
+            waitingEl.textContent = counts.pendente > 0 ? counts.pendente + ' registro(s)' : 'Nenhum';
+            waitingEl.classList.toggle('empty', counts.pendente === 0);
+        }
+
+        function updateBatchButtons() {
+            const checked = validationList.querySelectorAll('.item-checkbox:checked').length;
+            document.getElementById('btnBatchApprove').disabled = checked === 0;
+            document.getElementById('btnBatchReject').disabled = checked === 0;
+        }
+
+        // ======================================================
+        // MODAIS — ABRIR / FECHAR
+        // ======================================================
+
+        function abrirModal(id) {
+            document.getElementById(id).classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharModal(id) {
+            document.getElementById(id).classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('[data-close]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                fecharModal(this.dataset.close);
+            });
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) fecharModal(overlay.id);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach(m => fecharModal(m.id));
+            }
+        });
+
+        // ======================================================
+        // MODAL — VISUALIZAR BALANÇO HÍDRICO
+        // ======================================================
+
+        let itemAtualId = null;
+
+        function abrirModalVisualizar(id) {
+            const fila = getFilaValidacao();
+            const item = fila.find(i => i.id === id);
+            if (!item) return;
+
+            itemAtualId = id;
+            const d = item.data || item;
+
+            // Cabeçalho
+            document.getElementById('modalViewLocal').textContent = `${item.municipio || d.municipio}/${item.estado || d.estado}`;
+            document.getElementById('modalViewPrestador').textContent = item.prestador || d.prestador || 'Empresa não informada';
+
+            // Info resumida
+            document.getElementById('mvPrestador').textContent = item.prestador || d.prestador || '—';
+            document.getElementById('mvEstado').textContent = `${item.estado || d.estado || '—'} — ${ESTADOS_NOMES[item.estado || d.estado] || ''}`;
+            document.getElementById('mvMunicipio').textContent = item.municipio || d.municipio || '—';
+            document.getElementById('mvAno').textContent = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : '—');
+            document.getElementById('mvData').textContent = new Date(item.dataEnvio || d.dataPreenchimento || Date.now()).toLocaleDateString('pt-BR');
+
+            // Cálculos
+            const faturadoExportado = d.faturadoExportado || 0;
+            const faturadoMedio = d.faturadoMedio || 0;
+            const faturadoNaoMedio = d.faturadoNaoMedio || 0;
+            const naoFaturadoMedio = d.naoFaturadoMedio || 0;
+            const naoFaturadoNaoMedio = d.naoFaturadoNaoMedio || 0;
+            const perdasAparentes = d.perdasAparentes || 0;
+            const perdasReais = d.perdasReais || 0;
+
+            const totalFaturado = faturadoExportado + faturadoMedio + faturadoNaoMedio;
+            const totalNaoFaturado = naoFaturadoMedio + naoFaturadoNaoMedio;
+            const totalPerdas = perdasAparentes + perdasReais;
+            const volumeEntrada = totalFaturado + totalNaoFaturado + totalPerdas;
+            const consumoAutorizado = totalFaturado + totalNaoFaturado;
+
+            document.getElementById('mvVolume').textContent = formatNumber(volumeEntrada) + ' m³';
+
+            const pct = (v) => volumeEntrada > 0 ? ((v / volumeEntrada) * 100).toFixed(2) : '0.00';
+
+            // ===== SUBDIVISÕES LITERÁRIAS PROPORCIONAIS =====
+            // PERDAS APARENTES — proporcional ao total de perdasAparentes
+            const apSub  = perdasAparentes * (PESOS_LITERARIOS.submedicao   / PESO_TOTAL_AP);
+            const apClan = perdasAparentes * (PESOS_LITERARIOS.clandestinos / PESO_TOTAL_AP);
+            const apFrau = perdasAparentes * (PESOS_LITERARIOS.fraudes      / PESO_TOTAL_AP);
+
+            // PERDAS REAIS — proporcional ao total de perdasReais
+            const prRam = perdasReais * (PESOS_LITERARIOS.vazamentosRamais        / PESO_TOTAL_PR);
+            const prRed = perdasReais * (PESOS_LITERARIOS.vazamentosRedes         / PESO_TOTAL_PR);
+            const prRes = perdasReais * (PESOS_LITERARIOS.vazamentosReservatorios / PESO_TOTAL_PR);
+
+            // Matriz
+            const matrixHTML = `
+                <!-- COLUNA 1 — VOLUME DE ENTRADA -->
+                <div class="matrix-cell bg-volume" style="grid-column: 1; grid-row: 1 / 12;">
+                    <div class="label-main">Volume de Entrada</div>
+                    <div class="main-value">${formatNumber(volumeEntrada)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+
+                <!-- COLUNA 2 -->
+                <div class="matrix-cell bg-consumo" style="grid-column: 2; grid-row: 1 / 6;">
+                    <div class="label-main">Consumo Autorizado</div>
+                    <div class="main-value">${formatNumber(consumoAutorizado)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(consumoAutorizado)}% VE</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 2; grid-row: 6 / 12;">
+                    <div class="label-main">Perdas de Água</div>
+                    <div class="main-value">${formatNumber(totalPerdas)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(totalPerdas)}% VE</div>
+                </div>
+
+                <!-- COLUNA 3 -->
+                <div class="matrix-cell bg-white" style="grid-column: 3; grid-row: 1 / 4;">
+                    <div class="label-main">Consumo Autorizado Faturado</div>
+                    <div class="main-value">${formatNumber(totalFaturado)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(totalFaturado)}% VE</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 3; grid-row: 4 / 6;">
+                    <div class="label-main">Consumo Autorizado Não Faturado</div>
+                    <div class="main-value">${formatNumber(totalNaoFaturado)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(totalNaoFaturado)}% VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 3; grid-row: 6 / 9;">
+                    <div class="label-main">Perdas Aparentes</div>
+                    <div class="main-value">${formatNumber(perdasAparentes)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(perdasAparentes)}% VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 3; grid-row: 9 / 12;">
+                    <div class="label-main">Perdas Reais</div>
+                    <div class="main-value">${formatNumber(perdasReais)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(perdasReais)}% VE</div>
+                </div>
+
+                <!-- COLUNA 4 -->
+                <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 1;">
+                    <div class="label-main">Volume Faturado Exportado</div>
+                    <div class="main-value">${formatNumber(faturadoExportado)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 2;">
+                    <div class="label-main">Volume Faturado Médio</div>
+                    <div class="main-value">${formatNumber(faturadoMedio)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 3;">
+                    <div class="label-main">Volume Faturado Não Médio</div>
+                    <div class="main-value">${formatNumber(faturadoNaoMedio)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 4; grid-row: 4;">
+                    <div class="label-main">Volume Não Faturado Médio</div>
+                    <div class="main-value">${formatNumber(naoFaturadoMedio)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 4; grid-row: 5;">
+                    <div class="label-main">Volume Não Faturado Não Médio</div>
+                    <div class="main-value">${formatNumber(naoFaturadoNaoMedio)}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 6;">
+                    <div class="label-main">Submedição</div>
+                    <div class="main-value">${formatNumber(Math.round(apSub))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 7;">
+                    <div class="label-main">Clandestinos / Falhas</div>
+                    <div class="main-value">${formatNumber(Math.round(apClan))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 8;">
+                    <div class="label-main">Fraudes</div>
+                    <div class="main-value">${formatNumber(Math.round(apFrau))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 9;">
+                    <div class="label-main">Vazamentos em Ramais</div>
+                    <div class="main-value">${formatNumber(Math.round(prRam))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 10;">
+                    <div class="label-main">Vazamentos em Redes</div>
+                    <div class="main-value">${formatNumber(Math.round(prRed))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 11;">
+                    <div class="label-main">Vazamentos em Reservatórios</div>
+                    <div class="main-value">${formatNumber(Math.round(prRes))}</div>
+                    <div class="sub-value">m³/ano</div>
+                </div>
+
+                <!-- COLUNA 5 — PERCENTUAIS -->
+                <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 1;">
+                    <div class="pct-value">${pct(faturadoExportado)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 2;">
+                    <div class="pct-value">${pct(faturadoMedio)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 3;">
+                    <div class="pct-value">${pct(faturadoNaoMedio)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 5; grid-row: 4;">
+                    <div class="pct-value">${pct(naoFaturadoMedio)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-nao-faturado" style="grid-column: 5; grid-row: 5;">
+                    <div class="pct-value">${pct(naoFaturadoNaoMedio)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 6;">
+                    <div class="pct-value">${pct(apSub)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 7;">
+                    <div class="pct-value">${pct(apClan)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 8;">
+                    <div class="pct-value">${pct(apFrau)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 9;">
+                    <div class="pct-value">${pct(prRam)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 10;">
+                    <div class="pct-value">${pct(prRed)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+                <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 11;">
+                    <div class="pct-value">${pct(prRes)}%</div>
+                    <div class="label-sub">do VE</div>
+                </div>
+
+                <!-- COLUNA 6 -->
+                <div class="matrix-cell bg-total-faturado" style="grid-column: 6; grid-row: 1 / 4;">
+                    <div class="label-main">Volume Faturado</div>
+                    <div class="main-value">${formatNumber(totalFaturado)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(totalFaturado)}% VE</div>
+                </div>
+                <div class="matrix-cell bg-total-nao-faturado" style="grid-column: 6; grid-row: 4 / 12;">
+                    <div class="label-main">Volume Não Faturado</div>
+                    <div class="main-value">${formatNumber(totalNaoFaturado + totalPerdas)}</div>
+                    <div class="sub-value">m³/ano</div>
+                    <div class="pct-value">${pct(totalNaoFaturado + totalPerdas)}% VE</div>
+                </div>
+            `;
+
+            document.getElementById('modalMatrix').innerHTML = matrixHTML;
+
+            // Justificativa (se existir)
+            const box = document.getElementById('modalJustificativaBox');
+            if (item.justificativa) {
+                box.style.display = 'block';
+                document.getElementById('mvJustLabel').textContent =
+                    item.status === 'aprovado' ? 'Aprovação:' : 'Rejeição:';
+                document.getElementById('mvJustText').textContent = item.justificativa;
+            } else {
+                box.style.display = 'none';
+            }
+
+            // Botões de ação: só aparecem se estiver pendente
+            const btnApprove = document.getElementById('mvBtnApprove');
+            const btnReject = document.getElementById('mvBtnReject');
+
+            if (item.status === 'pendente') {
+                btnApprove.style.display = 'inline-flex';
+                btnReject.style.display = 'inline-flex';
+            } else {
+                btnApprove.style.display = 'none';
+                btnReject.style.display = 'none';
+            }
+
+            abrirModal('modalVisualizar');
+        }
+
+        // Botões dentro do modal de visualização
+        document.getElementById('mvBtnApprove').addEventListener('click', function () {
+            if (itemAtualId !== null) {
+                fecharModal('modalVisualizar');
+                abrirModalJustificativa(itemAtualId, 'aprovar');
+            }
+        });
+
+        document.getElementById('mvBtnReject').addEventListener('click', function () {
+            if (itemAtualId !== null) {
+                fecharModal('modalVisualizar');
+                abrirModalJustificativa(itemAtualId, 'rejeitar');
+            }
+        });
+
+        // ======================================================
+        // MODAL — JUSTIFICATIVA
+        // ======================================================
+
+        let justificativaContexto = {
+            modo: 'individual',
+            acao: 'aprovar',
+            id: null,
+            ids: []
+        };
+
+        function abrirModalJustificativa(id, acao) {
+            justificativaContexto = {
+                modo: 'individual',
+                acao: acao,
+                id: id,
+                ids: []
+            };
+            configurarModalJustificativa();
+            abrirModal('modalJustificativa');
+        }
+
+        function abrirModalJustificativaLote(ids, acao) {
+            justificativaContexto = {
+                modo: 'lote',
+                acao: acao,
+                id: null,
+                ids: ids
+            };
+            configurarModalJustificativa();
+            abrirModal('modalJustificativa');
+        }
+
+        function configurarModalJustificativa() {
+            const { modo, acao, id, ids } = justificativaContexto;
+            const icon = document.getElementById('mjIcon');
+            const title = document.getElementById('mjTitle');
+            const sub = document.getElementById('mjSub');
+            const ta = document.getElementById('mjTextarea');
+            const btn = document.getElementById('mjBtnConfirm');
+
+            ta.value = '';
+
+            if (acao === 'aprovar') {
+                icon.className = 'mh-icon success';
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                title.textContent = 'Aprovar registro';
+                btn.className = 'modal-btn success';
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmar aprovação';
+            } else {
+                icon.className = 'mh-icon danger';
+                icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                title.textContent = 'Rejeitar registro';
+                btn.className = 'modal-btn danger';
+                btn.innerHTML = '<i class="fas fa-times"></i> Confirmar rejeição';
+            }
+
+            if (modo === 'individual') {
+                const item = getFilaValidacao().find(i => i.id === id);
+                if (item) {
+                    sub.textContent = `${item.municipio}/${item.estado} — ${item.prestador || 'Empresa não informada'}`;
+                }
+            } else {
+                sub.textContent = `${ids.length} registro(s) selecionado(s)`;
+            }
+
+            if (acao === 'aprovar') {
+                ta.placeholder = 'Ex: Dados consistentes com o SNIS e com o histórico do prestador.';
+            } else {
+                ta.placeholder = 'Ex: Divergência nos valores de perdas aparentes em relação ao relatório anterior.';
+            }
+
+            ta.focus();
+        }
+
+        document.getElementById('mjBtnConfirm').addEventListener('click', function () {
+            const just = document.getElementById('mjTextarea').value.trim();
+            if (!just) {
+                showToast('warning', 'Justificativa obrigatória', 'Descreva o motivo da ação antes de confirmar.');
+                document.getElementById('mjTextarea').focus();
+                return;
+            }
+
+            const { modo, acao, id, ids } = justificativaContexto;
+
+            if (modo === 'individual') {
+                if (acao === 'aprovar') aprovarRegistro(id, just);
+                else rejeitarRegistro(id, just);
+            } else {
+                if (acao === 'aprovar') aprovarLote(ids, just);
+                else rejeitarLote(ids, just);
+            }
+
+            fecharModal('modalJustificativa');
+        });
+
+        // ======================================================
+        // TABS
+        // ======================================================
+
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.status;
+
+                const radio = document.querySelector(`input[name="statusFiltro"][value="${currentFilter}"]`);
+                if (radio) {
+                    document.querySelectorAll('input[name="statusFiltro"]').forEach(r =>
+                        r.closest('.filter-option').classList.remove('checked'));
+                    radio.checked = true;
+                    radio.closest('.filter-option').classList.add('checked');
+                }
+
+                renderList();
+            });
+        });
+
+        // ======================================================
+        // BOTÕES EM LOTE
+        // ======================================================
+
+        document.getElementById('btnBatchApprove').addEventListener('click', function () {
+            const ids = [...validationList.querySelectorAll('.item-checkbox:checked')]
+                .map(cb => parseInt(cb.dataset.id));
+            if (ids.length === 0) return;
+            abrirModalJustificativaLote(ids, 'aprovar');
+        });
+
+        document.getElementById('btnBatchReject').addEventListener('click', function () {
+            const ids = [...validationList.querySelectorAll('.item-checkbox:checked')]
+                .map(cb => parseInt(cb.dataset.id));
+            if (ids.length === 0) return;
+            abrirModalJustificativaLote(ids, 'rejeitar');
+        });
+
+        // ======================================================
+        // FILTROS DA SIDEBAR
+        // ======================================================
+
+        document.querySelectorAll('input[name="statusFiltro"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('input[name="statusFiltro"]').forEach(r =>
+                    r.closest('.filter-option').classList.remove('checked'));
+                this.closest('.filter-option').classList.add('checked');
+
+                currentFilter = this.value;
+
+                document.querySelectorAll('.chart-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.status === currentFilter);
+                });
+
+                renderList();
+            });
+        });
+
+        // ======================================================
+        // RESET
+        // ======================================================
+
+        document.getElementById('btnResetAll').addEventListener('click', function () {
+            currentFilter = 'pendente';
+            document.querySelectorAll('.chart-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.status === 'pendente');
+            });
+            document.querySelectorAll('input[name="statusFiltro"]').forEach(r => {
+                r.checked = (r.value === 'pendente');
+                r.closest('.filter-option').classList.toggle('checked', r.value === 'pendente');
+            });
+            renderList();
+            showToast('info', 'Filtros resetados', 'Exibindo registros pendentes.');
+        });
+
+        // ======================================================
+        // INICIALIZAÇÃO
+        // ======================================================
+
+        renderList();
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'validacaoData' || e.key === 'balancoHidricoHistory') {
+                renderList();
+            }
+        });
+
+        showToast('info', 'Sistema pronto', 'Clique em um registro para visualizar o Balanço Hídrico.');
+    </script>
+
+</body>
+
+</html>

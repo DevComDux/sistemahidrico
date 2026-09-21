@@ -1,0 +1,2620 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz do Balanço Hídrico · AESBE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ----- Reset & Globais ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        :root {
+            --primary-blue: #0a2558;
+            --primary-blue-light: #1a4c8d;
+            --primary-blue-bg: #eef3fc;
+            --primary-gradient: linear-gradient(145deg, #071d47, #12356e);
+            --text-dark: #142433;
+            --text-muted: #4c617b;
+            --border-light: #e3eaf2;
+            --shadow-card: 0 16px 48px -12px rgba(0, 20, 50, 0.20);
+            --radius-card: 24px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            --color-volume: #dde3ed;
+            --color-consumo: #c6dbf5;
+            --color-faturado: #4f8fd9;
+            --color-nao-faturado: #f7d9c0;
+            --color-perdas-aparentes: #f3c8c8;
+            --color-perdas-reais: #d1b3d6;
+            --color-detalhe: #ecf2fa;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            width: 100%;
+            max-width: 1600px;
+            min-height: 88vh;
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 16px;
+            gap: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 220px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-card);
+            padding: 28px 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-card);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.expanded {
+            width: 480px;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .logo-area .brand {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .logo-area .sub {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .logo-area .prestador {
+            margin-top: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-blue-light);
+            background: var(--primary-blue-bg);
+            padding: 6px 20px;
+            border-radius: 40px;
+            display: inline-block;
+            border: 1px solid rgba(26, 76, 141, 0.08);
+        }
+
+        .nav-menu {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item i {
+            width: 26px;
+            font-size: 1.05rem;
+            margin-right: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+        }
+
+        .nav-item.active {
+            background: var(--primary-blue);
+            color: #fff;
+            box-shadow: 0 8px 20px -6px rgba(10, 37, 88, 0.3);
+        }
+
+        .nav-item.active i {
+            color: #fff;
+        }
+
+        .nav-item.add-data {
+            background: linear-gradient(135deg, #e8f0fe, #d4e0f5);
+            color: var(--primary-blue);
+            font-weight: 600;
+            margin-top: 4px;
+            border: 2px dashed var(--primary-blue-light);
+        }
+
+        .nav-item.add-data:hover {
+            background: linear-gradient(135deg, #d4e0f5, #b8cceb);
+            transform: scale(1.02);
+        }
+
+        .btn-clear-filters {
+            background: var(--primary-blue-bg);
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            width: 100%;
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 18px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-clear-filters:hover {
+            background: #d7e1f2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(10, 37, 88, 0.08);
+        }
+
+        /* ===== PAINEL DE ADICIONAR DADOS ===== */
+        .add-data-panel {
+            display: none;
+            margin-top: 16px;
+            padding: 20px 16px;
+            background: var(--primary-blue-bg);
+            border-radius: 16px;
+            border: 2px solid var(--primary-blue-light);
+            animation: slideIn 0.3s ease;
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        .add-data-panel.open {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .add-data-panel h3 {
+            font-size: 0.95rem;
+            color: var(--primary-blue);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            background: var(--primary-blue-bg);
+            padding-bottom: 8px;
+            z-index: 1;
+        }
+
+        .add-data-panel .form-group {
+            margin-bottom: 12px;
+        }
+
+        .add-data-panel label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .add-data-panel label .required {
+            color: #e74c3c;
+        }
+
+        .add-data-panel input,
+        .add-data-panel select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #d0dbe8;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        .add-data-panel input:focus,
+        .add-data-panel select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(10, 37, 88, 0.1);
+        }
+
+        .add-data-panel input[readonly] {
+            background: #f0f4f9;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .add-data-panel select:disabled {
+            background: #f0f4f9;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .add-data-panel .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .add-data-panel .form-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin: 14px 0 8px;
+            padding: 4px 0;
+            border-bottom: 2px solid rgba(10, 37, 88, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .add-data-panel .form-section-title .sub-info {
+            font-size: 0.6rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            text-transform: none;
+        }
+
+        .add-data-panel .literature-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 4px;
+            border-left: 3px solid var(--primary-blue-light);
+        }
+
+        .add-data-panel .sub-fields {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 6px;
+        }
+
+        .add-data-panel .sub-fields .form-group {
+            margin-bottom: 8px;
+        }
+
+        .add-data-panel .sub-fields .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .add-data-panel .sub-fields label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .add-data-panel .sub-fields input {
+            background: #f8fafc;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+        }
+
+        .add-data-panel .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-blue);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 12px;
+        }
+
+        .add-data-panel .btn-submit:hover {
+            background: var(--primary-blue-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(10, 37, 88, 0.2);
+        }
+
+        .add-data-panel .btn-cancel {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: var(--transition);
+        }
+
+        .add-data-panel .btn-cancel:hover {
+            color: var(--primary-blue);
+            text-decoration: underline;
+        }
+
+        .add-data-panel .btn-load-history {
+            width: 100%;
+            padding: 8px;
+            background: rgba(10, 37, 88, 0.08);
+            color: var(--primary-blue);
+            border: 1px dashed var(--primary-blue-light);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 4px;
+        }
+
+        .add-data-panel .btn-load-history:hover {
+            background: rgba(10, 37, 88, 0.12);
+        }
+
+        .add-data-panel::-webkit-scrollbar { width: 4px; }
+        .add-data-panel::-webkit-scrollbar-thumb {
+            background: var(--primary-blue-light);
+            border-radius: 10px;
+        }
+
+        /* Histórico */
+        .history-list {
+            margin-top: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 8px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.75rem;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .history-item:last-child { border-bottom: none; }
+
+        .history-item .date { color: var(--text-muted); font-weight: 500; }
+        .history-item .values { color: var(--text-dark); }
+
+        .history-item .btn-load {
+            background: var(--primary-blue-bg);
+            border: none;
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: var(--primary-blue);
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .history-item .btn-load:hover {
+            background: var(--primary-blue);
+            color: #fff;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            padding: 14px 28px;
+            border-radius: var(--radius-card);
+            flex-wrap: wrap;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .title-area h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.4px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+        }
+
+        .title-area p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 400;
+        }
+
+        .title-area .context-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.18);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #fff;
+            font-weight: 500;
+            margin-top: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .export-area { display: flex; align-items: center; gap: 12px; }
+
+        .export-menu-container { position: relative; display: inline-block; }
+
+        .export-menu-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--primary-blue);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .export-menu-btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .export-menu-btn .badge-export {
+            background: var(--primary-blue);
+            color: #fff;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .export-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            min-width: 260px;
+            padding: 8px 0;
+            z-index: 100;
+            border: 1px solid var(--border-light);
+        }
+
+        .export-dropdown.open { display: block; }
+
+        .export-dropdown .export-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .export-dropdown .export-item:hover {
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+        }
+
+        .export-dropdown .export-item i { width: 20px; color: var(--text-muted); }
+        .export-dropdown .export-item:hover i { color: var(--primary-blue); }
+
+        .export-dropdown .export-item .shortcut {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--primary-blue-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .export-dropdown .dropdown-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 4px 12px;
+        }
+
+        .export-dropdown .dropdown-header {
+            padding: 8px 20px 4px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* ===== CARD MATRIZ ===== */
+        .card-matrix {
+            flex: 1;
+            background: #fff;
+            border-radius: var(--radius-card);
+            padding: 24px 28px 20px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--primary-blue-bg);
+            padding: 4px;
+            border-radius: 16px;
+        }
+
+        .chart-tab {
+            padding: 8px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: var(--transition);
+            font-size: 0.85rem;
+            border: none;
+            background: transparent;
+        }
+
+        .chart-tab.active {
+            background: #fff;
+            color: var(--primary-blue);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .matrix-wrapper {
+            width: 100%;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            overflow: hidden;
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.15fr 1.35fr 0.55fr 1fr;
+            grid-template-rows: repeat(11, 68px);
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            gap: 0;
+            border: 2px solid var(--border-light);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .matrix-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-width: 0;
+            min-height: 0;
+            padding: 6px 4px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .main-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 3px 0 1px;
+            color: #0b1a33;
+            letter-spacing: -0.2px;
+            line-height: 1.15;
+        }
+
+        .label-main {
+            font-size: clamp(0.50rem, 0.65vw, 0.68rem);
+            font-weight: 600;
+            line-height: 1.15;
+            color: #1a2d44;
+            text-transform: uppercase;
+            letter-spacing: 0.1px;
+        }
+
+        .sub-value {
+            font-size: clamp(0.45rem, 0.55vw, 0.62rem);
+            line-height: 1.1;
+            color: #2a4058;
+        }
+
+        .pct-value {
+            font-size: clamp(0.55rem, 0.7vw, 0.75rem);
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--primary-blue);
+        }
+
+        .label-sub {
+            font-size: clamp(0.45rem, 0.5vw, 0.58rem);
+            line-height: 1;
+            color: #4a617c;
+            text-transform: uppercase;
+        }
+
+        /* CORES */
+        .bg-volume { background: var(--color-volume); }
+        .bg-consumo { background: var(--color-consumo); }
+        .bg-faturado { background: var(--color-faturado); color: #fff; }
+        .bg-nao-faturado { background: var(--color-nao-faturado); }
+        .bg-perdas-aparentes { background: var(--color-perdas-aparentes); }
+        .bg-perdas-reais { background: var(--color-perdas-reais); color: #fff; }
+        .bg-perdas-reais .main-value,
+        .bg-perdas-reais .sub-value,
+        .bg-perdas-reais .label-main,
+        .bg-perdas-reais .pct-value { color: #fff; }
+        .bg-white { background: #fff; }
+        .bg-total-faturado { background: #3a7fc7; color: #fff; }
+        .bg-total-faturado .main-value,
+        .bg-total-faturado .sub-value,
+        .bg-total-faturado .label-main,
+        .bg-total-faturado .pct-value { color: #fff; }
+        .bg-total-nao-faturado { background: #c97a7a; color: #fff; }
+        .bg-total-nao-faturado .main-value,
+        .bg-total-nao-faturado .sub-value,
+        .bg-total-nao-faturado .label-main,
+        .bg-total-nao-faturado .pct-value { color: #fff; }
+        .bg-percentual { background: #faf5e8; }
+
+        /* ===== RIGHT SIDEBAR ===== */
+        .right-sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-card);
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-card);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            gap: 14px;
+            max-height: 100%;
+            overflow-y: auto;
+        }
+
+        .right-sidebar::-webkit-scrollbar { width: 4px; }
+        .right-sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-blue-light);
+            border-radius: 10px;
+        }
+
+        .filter-group {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-light);
+        }
+
+        .filter-group-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-group-title i {
+            color: var(--primary-blue-light);
+            font-size: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .filter-option:hover {
+            background: rgba(10, 37, 88, 0.04);
+            color: var(--primary-blue);
+        }
+
+        .filter-option input[type="radio"] {
+            accent-color: var(--primary-blue);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .filter-option.checked {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .filter-option em {
+            font-style: normal;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .filter-list-scroll {
+            max-height: 130px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .filter-list-scroll::-webkit-scrollbar { width: 4px; }
+        .filter-list-scroll::-webkit-scrollbar-thumb {
+            background: #c0cbd8;
+            border-radius: 10px;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .info-field:last-child { border-bottom: none; }
+
+        .info-field-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            font-weight: 600;
+        }
+
+        .info-field-value {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .info-field-value.empty {
+            color: #a0b3c9;
+            font-style: italic;
+            font-weight: 400;
+            font-size: 0.78rem;
+        }
+
+        .btn-reset-hierarchy {
+            background: #fff;
+            border: 1px dashed var(--primary-blue-light);
+            padding: 8px;
+            border-radius: 10px;
+            width: 100%;
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.75rem;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-reset-hierarchy:hover { background: var(--primary-blue-bg); }
+
+        .filter-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: var(--primary-blue-bg);
+            color: var(--primary-blue);
+            font-weight: 600;
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        /* Footer */
+        .matrix-footer {
+            margin-top: 18px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: #3e546b;
+            padding: 10px 4px 4px;
+            align-items: center;
+            border-top: 2px solid var(--border-light);
+            flex-shrink: 0;
+        }
+
+        .matrix-footer .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .matrix-footer .color-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .matrix-footer .total-box {
+            margin-left: auto;
+            font-weight: 600;
+            color: var(--primary-blue);
+            background: var(--primary-blue-bg);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #fff;
+            padding: 16px 24px;
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            border-left: 4px solid var(--primary-blue);
+            max-width: 420px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast i { font-size: 1.4rem; color: var(--primary-blue); }
+
+        .toast .toast-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toast .toast-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .toast .toast-message {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Responsivo */
+        @media (max-width: 1400px) {
+            .dashboard-container { flex-direction: column; min-height: auto; }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                padding: 16px 24px;
+                gap: 12px;
+            }
+            .right-sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                padding: 16px 24px;
+                gap: 16px;
+                max-height: none;
+            }
+            .filter-group { flex: 1; min-width: 200px; }
+            .sidebar.expanded { width: 100%; }
+            .logo-area {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+                flex: 1;
+                min-width: 180px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            .logo-area .brand { font-size: 1.8rem; }
+            .logo-area .prestador { margin-top: 0; }
+            .nav-menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 4px;
+                flex: 1;
+                justify-content: flex-end;
+            }
+            .nav-item { padding: 8px 14px; font-size: 0.8rem; }
+            .btn-clear-filters { width: auto; padding: 8px 20px; margin-top: 0; }
+            .add-data-panel { width: 100%; margin-top: 8px; max-height: 500px; }
+        }
+
+        @media (max-width: 900px) {
+            .top-bar { flex-direction: column; align-items: stretch; }
+            .export-area { justify-content: flex-end; }
+        }
+
+        @media (max-width: 550px) {
+            body { padding: 12px; }
+            .dashboard-container { padding: 10px; border-radius: 24px; }
+            .sidebar, .right-sidebar { flex-direction: column; padding: 16px; }
+            .logo-area { flex-direction: column; align-items: center; }
+            .nav-menu { justify-content: center; }
+            .btn-clear-filters { width: 100%; }
+            .card-matrix { padding: 16px; }
+            .title-area h1 { font-size: 1.3rem; }
+            .toast {
+                bottom: 16px; right: 16px; left: 16px; padding: 14px 18px;
+            }
+            .add-data-panel .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <div>
+                    <div class="brand">ANA</div>
+                    <div class="sub">AGÊNCIA NACIONAL DE ÁGUAS</div>
+                    <div class="sub">E SANEAMENTO BÁSICO</div>
+                </div>
+                <div class="prestador">UnB</div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item"><i class="fas fa-home"></i> Início</a>
+                <a href="balanco-hidrico.html" class="nav-item active"><i class="fas fa-chart-simple"></i> Balanço Hídrico</a>
+                <a href="validacao.html" class="nav-item"><i class="fas fa-check-circle"></i> Validação</a>
+                <a href="cidades.html" class="nav-item"><i class="fas fa-city"></i> Cidades</a>
+                <a href="#" class="nav-item"><i class="fas fa-map-location-dot"></i> Mapa</a>
+                <a href="#" class="nav-item"><i class="fas fa-info-circle"></i> Informações</a>
+                <button class="nav-item add-data" id="toggleAddData">
+                    <i class="fas fa-plus-circle"></i> Adicionar dados
+                </button>
+            </nav>
+
+            <!-- PAINEL DE ADICIONAR DADOS -->
+            <div class="add-data-panel" id="addDataPanel">
+                <h3><i class="fas fa-pen-to-square"></i> Adicionar dados</h3>
+                <form id="addDataForm">
+
+                    <div class="form-section-title">
+                        <span><i class="fas fa-info-circle"></i> Metadados</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fieldEmpresa">Empresa / Prestador <span class="required">*</span></label>
+                        <input type="text" id="fieldEmpresa" placeholder="Ex: CAESB, Sabesp, Copasa..." required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fieldDataPreenchimento">Data de Preenchimento <span class="required">*</span></label>
+                            <input type="date" id="fieldDataPreenchimento" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fieldEstado">Estado <span class="required">*</span></label>
+                            <select id="fieldEstado" required>
+                                <option value="">Selecione...</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldMunicipio">Município / RA <span class="required">*</span></label>
+                        <select id="fieldMunicipio" required disabled>
+                            <option value="">Selecione um estado primeiro</option>
+                        </select>
+                    </div>
+
+                    <!-- VOLUME FATURADO -->
+                    <div class="form-section-title">
+                        <span><i class="fas fa-circle-check"></i> Volume Faturado</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fieldFaturadoExportado">Volume Faturado Exportado</label>
+                            <input type="number" id="fieldFaturadoExportado" placeholder="Ex: 1296515000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fieldFaturadoMedio">Volume Faturado Médio</label>
+                            <input type="number" id="fieldFaturadoMedio" placeholder="Ex: 8571288370" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldFaturadoNaoMedio">Volume Faturado Não Médio</label>
+                        <input type="number" id="fieldFaturadoNaoMedio" placeholder="Ex: 430480000" required>
+                    </div>
+
+                    <!-- VOLUME NÃO FATURADO -->
+                    <div class="form-section-title">
+                        <span><i class="fas fa-circle-minus"></i> Volume Não Faturado</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fieldNaoFaturadoMedio">Volume Não Faturado Médio</label>
+                            <input type="number" id="fieldNaoFaturadoMedio" placeholder="Ex: 845230000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fieldNaoFaturadoNaoMedio">Volume Não Faturado Não Médio</label>
+                            <input type="number" id="fieldNaoFaturadoNaoMedio" placeholder="Ex: 81019350" required>
+                        </div>
+                    </div>
+
+                    <!-- PERDAS APARENTES -->
+                    <div class="form-section-title">
+                        <span><i class="fas fa-triangle-exclamation"></i> Perdas Aparentes</span>
+                        <span class="sub-info">Total = Submedição + Clandestinos + Fraudes</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldPerdasAparentes">Perdas Aparentes (Total) <span class="required">*</span></label>
+                        <input type="number" id="fieldPerdasAparentes" placeholder="Ex: 781156160" required>
+                    </div>
+                    <div class="literature-info">
+                        <i class="fas fa-book"></i> Subdivisões proporcionais ao total digitado (baseadas na literatura):
+                    </div>
+                    <div class="sub-fields">
+                        <div class="form-group">
+                            <label>Submedição (peso 4,48%)</label>
+                            <input type="text" id="displaySubmedicao" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Clandestinos / Falhas Cadastro (peso 1,3%)</label>
+                            <input type="text" id="displayClandestinos" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Fraudes (peso 0,36%)</label>
+                            <input type="text" id="displayFraudes" readonly value="0">
+                        </div>
+                    </div>
+
+                    <!-- PERDAS REAIS -->
+                    <div class="form-section-title">
+                        <span><i class="fas fa-droplet"></i> Perdas Reais</span>
+                        <span class="sub-info">Total = Vaz. Ramais + Vaz. Redes + Vaz. Reservatórios</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldPerdasReais">Perdas Reais (Total) <span class="required">*</span></label>
+                        <input type="number" id="fieldPerdasReais" placeholder="Ex: 7629623350" required>
+                    </div>
+                    <div class="literature-info">
+                        <i class="fas fa-book"></i> Subdivisões proporcionais ao total digitado (baseadas na literatura):
+                    </div>
+                    <div class="sub-fields">
+                        <div class="form-group">
+                            <label>Vazamentos em Ramais (peso 19,82%)</label>
+                            <input type="text" id="displayVazamentosRamais" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Vazamentos em Redes (peso 4,5%)</label>
+                            <input type="text" id="displayVazamentosRedes" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Vazamentos em Reservatórios (peso 0,46%)</label>
+                            <input type="text" id="displayVazamentosReservatorios" readonly value="0">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Enviar para validação
+                    </button>
+                    <button type="button" class="btn-cancel" id="cancelAddData">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn-load-history" id="loadHistoryBtn">
+                        <i class="fas fa-history"></i> Carregar histórico aprovado
+                    </button>
+
+                    <div id="historyContainer" style="display:none;">
+                        <div class="form-section-title" style="margin-top:12px;">
+                            <span><i class="fas fa-clock-rotate-left"></i> Histórico aprovado</span>
+                        </div>
+                        <div class="history-list" id="historyList"></div>
+                    </div>
+
+                </form>
+            </div>
+
+            <button class="btn-clear-filters" id="btnClearAll"><i class="fas fa-undo-alt"></i> Limpar filtros</button>
+        </aside>
+
+        <!-- ===== MAIN ===== -->
+        <main class="main-content">
+
+            <header class="top-bar">
+                <div class="title-area">
+                    <h1>Matriz do Balanço Hídrico</h1>
+                    <p>Dashboard de análise (SINISA)</p>
+                    <div class="context-badge" id="contextBadge">
+                        <i class="fas fa-globe-americas"></i>
+                        <span id="contextText">Brasil · Todos os dados aprovados</span>
+                    </div>
+                </div>
+                <div class="export-area">
+                    <div class="export-menu-container">
+                        <button class="export-menu-btn" id="exportMenuBtn" title="Exportar dados">
+                            <i class="fas fa-file-export"></i>
+                            Exportar
+                            <span class="badge-export">4</span>
+                        </button>
+                        <div class="export-dropdown" id="exportDropdown">
+                            <div class="dropdown-header">Exportar como</div>
+                            <button class="export-item" data-format="csv">
+                                <i class="fas fa-file-csv"></i> CSV (Planilha)
+                                <span class="shortcut">Ctrl+E</span>
+                            </button>
+                            <button class="export-item" data-format="excel">
+                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
+                                <span class="shortcut">Ctrl+X</span>
+                            </button>
+                            <button class="export-item" data-format="pdf">
+                                <i class="fas fa-file-pdf"></i> PDF (Relatório)
+                                <span class="shortcut">Ctrl+P</span>
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-header">Compartilhar</div>
+                            <button class="export-item" data-format="print">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                            <button class="export-item" data-format="copy">
+                                <i class="fas fa-copy"></i> Copiar para área de transferência
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="card-matrix" id="matrixCard">
+                <div class="chart-controls">
+                    <div class="chart-tabs">
+                        <button class="chart-tab active">Balanço Hídrico (m³)</button>
+                        <button class="chart-tab">Balanço Hídrico (R$)</button>
+                    </div>
+                </div>
+
+                <div class="matrix-wrapper">
+                    <div class="matrix-grid" id="matrixGrid">
+
+                        <!-- COLUNA 1 -->
+                        <div class="matrix-cell bg-volume" style="grid-column: 1; grid-row: 1 / 12;">
+                            <div class="label-main">Volume de Entrada</div>
+                            <div class="main-value" id="displayVolumeEntrada">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="sub-value" style="font-weight:500;">— l/hab/dia</div>
+                        </div>
+
+                        <!-- COLUNA 2 -->
+                        <div class="matrix-cell bg-consumo" style="grid-column: 2; grid-row: 1 / 6;">
+                            <div class="label-main">Consumo Autorizado</div>
+                            <div class="main-value" id="displayConsumoAutorizado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctConsumoAutorizado">0,00% VE</div>
+                        </div>
+
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 2; grid-row: 6 / 12;">
+                            <div class="label-main">Perdas de Água</div>
+                            <div class="main-value" id="displayPerdasAgua">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctPerdasAgua">0,00% VE</div>
+                        </div>
+
+                        <!-- COLUNA 3 -->
+                        <div class="matrix-cell bg-white" style="grid-column: 3; grid-row: 1 / 4;">
+                            <div class="label-main">Consumo Autorizado Faturado</div>
+                            <div class="main-value" id="displayFaturado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctFaturado">0,00% VE</div>
+                        </div>
+
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 3; grid-row: 4 / 6;">
+                            <div class="label-main">Consumo Autorizado Não Faturado</div>
+                            <div class="main-value" id="displayNaoFaturado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctNaoFaturado">0,00% VE</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 3; grid-row: 6 / 9;">
+                            <div class="label-main">Perdas Aparentes</div>
+                            <div class="main-value" id="displayPerdasAparentes">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctPerdasAparentes">0,00% VE</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 3; grid-row: 9 / 12;">
+                            <div class="label-main">Perdas Reais</div>
+                            <div class="main-value" id="displayPerdasReais">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctPerdasReais">0,00% VE</div>
+                        </div>
+
+                        <!-- COLUNA 4 -->
+                        <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 1;">
+                            <div class="label-main">Volume Faturado Exportado</div>
+                            <div class="main-value" id="displayFaturadoExportado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 2;">
+                            <div class="label-main">Volume Faturado Médio</div>
+                            <div class="main-value" id="displayFaturadoMedio">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-white" style="grid-column: 4; grid-row: 3;">
+                            <div class="label-main">Volume Faturado Não Médio</div>
+                            <div class="main-value" id="displayFaturadoNaoMedio">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 4; grid-row: 4;">
+                            <div class="label-main">Volume Não Faturado Médio</div>
+                            <div class="main-value" id="displayNaoFaturadoMedio">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 4; grid-row: 5;">
+                            <div class="label-main">Volume Não Faturado Não Médio</div>
+                            <div class="main-value" id="displayNaoFaturadoNaoMedio">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 6;">
+                            <div class="label-main">Submedição</div>
+                            <div class="main-value" id="displaySubmedicaoValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 7;">
+                            <div class="label-main">Clandestinos / Falhas</div>
+                            <div class="main-value" id="displayClandestinosValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 4; grid-row: 8;">
+                            <div class="label-main">Fraudes</div>
+                            <div class="main-value" id="displayFraudesValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 9;">
+                            <div class="label-main">Vazamentos em Ramais</div>
+                            <div class="main-value" id="displayVazamentosRamaisValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 10;">
+                            <div class="label-main">Vazamentos em Redes</div>
+                            <div class="main-value" id="displayVazamentosRedesValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 4; grid-row: 11;">
+                            <div class="label-main">Vazamentos em Reservatórios</div>
+                            <div class="main-value" id="displayVazamentosReservatoriosValor">0</div>
+                            <div class="sub-value">m³/ano</div>
+                        </div>
+
+                        <!-- COLUNA 5 -->
+                        <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 1;">
+                            <div class="pct-value" id="pctCol5_1">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 2;">
+                            <div class="pct-value" id="pctCol5_2">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-percentual" style="grid-column: 5; grid-row: 3;">
+                            <div class="pct-value" id="pctCol5_3">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 5; grid-row: 4;">
+                            <div class="pct-value" id="pctCol5_4">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-nao-faturado" style="grid-column: 5; grid-row: 5;">
+                            <div class="pct-value" id="pctCol5_5">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 6;">
+                            <div class="pct-value" id="pctCol5_6">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 7;">
+                            <div class="pct-value" id="pctCol5_7">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-aparentes" style="grid-column: 5; grid-row: 8;">
+                            <div class="pct-value" id="pctCol5_8">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 9;">
+                            <div class="pct-value" id="pctCol5_9">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 10;">
+                            <div class="pct-value" id="pctCol5_10">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+                        <div class="matrix-cell bg-perdas-reais" style="grid-column: 5; grid-row: 11;">
+                            <div class="pct-value" id="pctCol5_11">0,00%</div>
+                            <div class="label-sub">do VE</div>
+                        </div>
+
+                        <!-- COLUNA 6 -->
+                        <div class="matrix-cell bg-total-faturado" style="grid-column: 6; grid-row: 1 / 4;">
+                            <div class="label-main">Volume Faturado</div>
+                            <div class="main-value" id="displayTotalFaturado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctTotalFaturado">0,00% VE</div>
+                        </div>
+
+                        <div class="matrix-cell bg-total-nao-faturado" style="grid-column: 6; grid-row: 4 / 12;">
+                            <div class="label-main">Volume Não Faturado</div>
+                            <div class="main-value" id="displayTotalNaoFaturado">0</div>
+                            <div class="sub-value">m³/ano</div>
+                            <div class="pct-value" id="pctTotalNaoFaturado">0,00% VE</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="matrix-footer">
+                    <span class="legend-item">
+                        <span class="color-box" style="background:var(--color-volume);"></span> Volume Entrada
+                    </span>
+                    <span class="legend-item">
+                        <span class="color-box" style="background:var(--color-consumo);"></span> Consumo Autorizado
+                    </span>
+                    <span class="legend-item">
+                        <span class="color-box" style="background:var(--color-nao-faturado);"></span> Não Faturado
+                    </span>
+                    <span class="legend-item">
+                        <span class="color-box" style="background:var(--color-perdas-aparentes);"></span> Perdas Aparentes
+                    </span>
+                    <span class="legend-item">
+                        <span class="color-box" style="background:var(--color-perdas-reais);"></span> Perdas Reais
+                    </span>
+                    <span class="total-box">
+                        <i class="fas fa-database"></i> <span id="footerDataInfo">Nenhum dado aprovado</span>
+                    </span>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ===== RIGHT SIDEBAR (FILTROS) ===== -->
+        <aside class="right-sidebar">
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-calendar"></i> Ano de Referência
+                </div>
+                <div class="filter-options filter-list-scroll" id="anoOptions">
+                    <!-- Anos carregados dinamicamente -->
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-map"></i> Região
+                </div>
+                <div class="filter-options" id="regiaoOptions">
+                    <!-- Regiões carregadas dinamicamente -->
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-flag"></i> Estado
+                </div>
+                <div class="filter-options filter-list-scroll" id="estadoOptions">
+                    <span class="info-field-value empty">Selecione uma região</span>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-city"></i> Município / RA
+                </div>
+                <div class="filter-options filter-list-scroll" id="municipioOptions">
+                    <span class="info-field-value empty">Selecione um estado</span>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-layer-group"></i> Contexto do Filtro
+                </div>
+                <div class="filter-status">
+                    <i class="fas fa-globe-americas"></i>
+                    <span id="filterStatusText">Brasil · Todos os dados</span>
+                </div>
+                <button class="btn-reset-hierarchy" id="btnResetHierarchy">
+                    <i class="fas fa-redo-alt"></i> Resetar hierarquia
+                </button>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-group-title">
+                    <i class="fas fa-chart-bar"></i> Resumo
+                </div>
+                <div class="info-field">
+                    <span class="info-field-label">Registros considerados</span>
+                    <span class="info-field-value" id="summaryRecords">0</span>
+                </div>
+                <div class="info-field">
+                    <span class="info-field-label">Anos disponíveis</span>
+                    <span class="info-field-value" id="summaryYears">—</span>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <div class="toast-content">
+            <span class="toast-title">Pronto!</span>
+            <span class="toast-message" id="toastMessage">Operação realizada com sucesso.</span>
+        </div>
+    </div>
+
+    <script>
+        // ======================================================
+        // CONSTANTES
+        // ======================================================
+
+        const ESTADOS_NOMES = {
+            AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia',
+            CE: 'Ceará', DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás',
+            MA: 'Maranhão', MT: 'Mato Grosso', MS: 'Mato Grosso do Sul', MG: 'Minas Gerais',
+            PA: 'Pará', PB: 'Paraíba', PR: 'Paraná', PE: 'Pernambuco', PI: 'Piauí',
+            RJ: 'Rio de Janeiro', RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul',
+            RO: 'Rondônia', RR: 'Roraima', SC: 'Santa Catarina', SP: 'São Paulo',
+            SE: 'Sergipe', TO: 'Tocantins'
+        };
+
+        const ESTADOS_IBGE = {
+            AC: 12, AL: 27, AP: 16, AM: 13, BA: 29, CE: 23, DF: 53, ES: 32,
+            GO: 52, MA: 21, MT: 51, MS: 50, MG: 31, PA: 15, PB: 25, PR: 41,
+            PE: 26, PI: 22, RJ: 33, RN: 24, RS: 43, RO: 11, RR: 14, SC: 42,
+            SP: 35, SE: 28, TO: 17
+        };
+
+        const REGIOES_POR_ESTADO = {
+            AC: 'Norte', AP: 'Norte', AM: 'Norte', PA: 'Norte', RO: 'Norte', RR: 'Norte', TO: 'Norte',
+            AL: 'Nordeste', BA: 'Nordeste', CE: 'Nordeste', MA: 'Nordeste', PB: 'Nordeste',
+            PE: 'Nordeste', PI: 'Nordeste', RN: 'Nordeste', SE: 'Nordeste',
+            DF: 'Centro-Oeste', GO: 'Centro-Oeste', MT: 'Centro-Oeste', MS: 'Centro-Oeste',
+            ES: 'Sudeste', MG: 'Sudeste', RJ: 'Sudeste', SP: 'Sudeste',
+            PR: 'Sul', RS: 'Sul', SC: 'Sul'
+        };
+
+        const REGIOES = {
+            'Norte': ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'],
+            'Nordeste': ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
+            'Centro-Oeste': ['DF', 'GO', 'MT', 'MS'],
+            'Sudeste': ['ES', 'MG', 'RJ', 'SP'],
+            'Sul': ['PR', 'RS', 'SC']
+        };
+
+        const DF_REGIOES_ADMINISTRATIVAS = [
+            'Águas Claras', 'Arniqueira', 'Brazlândia', 'Candangolândia', 'Ceilândia',
+            'Cruzeiro', 'Fercal', 'Gama', 'Guará', 'Itapoã', 'Jardim Botânico',
+            'Lago Norte', 'Lago Sul', 'Núcleo Bandeirante', 'Paranoá', 'Park Way',
+            'Planaltina', 'Plano Piloto', 'Recanto das Emas', 'Riacho Fundo',
+            'Riacho Fundo II', 'Samambaia', 'Santa Maria', 'SCIA/Estrutural',
+            'SIA', 'Sobradinho', 'Sobradinho II', 'Sol Nascente/Pôr do Sol',
+            'Sudoeste/Octogonal', 'Taguatinga', 'Varjão', 'Vicente Pires'
+        ];
+
+        // Pesos literários utilizados para distribuir proporcionalmente
+        // as subdivisões dentro de Perdas Aparentes e Perdas Reais.
+        const PESOS_LITERARIOS = {
+            // Perdas Aparentes
+            submedicao: 4.48,
+            clandestinos: 1.30,
+            fraudes: 0.36,
+            // Perdas Reais
+            vazamentosRamais: 19.82,
+            vazamentosRedes: 4.50,
+            vazamentosReservatorios: 0.46
+        };
+
+        // Somas dos pesos (constantes)
+        const PESO_TOTAL_AP =
+            PESOS_LITERARIOS.submedicao +
+            PESOS_LITERARIOS.clandestinos +
+            PESOS_LITERARIOS.fraudes;         // 6.14
+
+        const PESO_TOTAL_PR =
+            PESOS_LITERARIOS.vazamentosRamais +
+            PESOS_LITERARIOS.vazamentosRedes +
+            PESOS_LITERARIOS.vazamentosReservatorios; // 24.78
+
+        // ======================================================
+        // UTILITÁRIOS
+        // ======================================================
+
+        const formatNumber = (num) =>
+            (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+        const parseNumber = (str) =>
+            parseFloat(String(str).replace(/\./g, '').replace(/,/g, '')) || 0;
+
+        const pctStr = (peso, total) =>
+            total > 0 ? ((peso / total) * 100).toFixed(2) : '0.00';
+
+        // ======================================================
+        // TOAST
+        // ======================================================
+
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastTitle = toast.querySelector('.toast-title');
+        const toastIcon = toast.querySelector('i');
+
+        function showToast(type, title, message) {
+            const config = {
+                success: { icon: 'fa-check-circle', color: 'var(--primary-blue)' },
+                warning: { icon: 'fa-exclamation-triangle', color: '#e67e22' },
+                error:   { icon: 'fa-exclamation-circle',   color: '#e74c3c' },
+                info:    { icon: 'fa-info-circle',          color: '#3498db' }
+            }[type] || { icon: 'fa-check-circle', color: 'var(--primary-blue)' };
+
+            toastIcon.className = 'fas ' + config.icon;
+            toastIcon.style.color = config.color;
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        // ======================================================
+        // LOCALSTORAGE
+        // ======================================================
+
+        function getAprovados() {
+            try { return JSON.parse(localStorage.getItem('balancoHidricoHistory') || '[]'); }
+            catch { return []; }
+        }
+
+        function getFilaValidacao() {
+            try { return JSON.parse(localStorage.getItem('validacaoData') || '[]'); }
+            catch { return []; }
+        }
+
+        function addToValidacaoQueue(data) {
+            const fila = getFilaValidacao();
+            const entry = {
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                timestamp: new Date().toISOString(),
+                status: 'pendente',
+                data: data,
+                municipio: data.municipio || '—',
+                estado: data.estado || '—',
+                prestador: data.prestador || 'Não informado',
+                dataEnvio: data.dataPreenchimento || new Date().toISOString().split('T')[0],
+                volumeEntrada: data._volumeEntrada || 0,
+                perdas: data._perdasPct || 0
+            };
+            fila.unshift(entry);
+            localStorage.setItem('validacaoData', JSON.stringify(fila));
+        }
+
+        function renderHistory() {
+            const history = getAprovados();
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.8rem;">Nenhum registro aprovado</div>';
+                return;
+            }
+
+            history.forEach((entry) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+
+                const d = entry.data || entry;
+                const date = new Date(entry.timestamp || Date.now());
+                const dateStr = date.toLocaleDateString('pt-BR') + ' ' +
+                    date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const totalFaturado = (d.faturadoExportado || 0) + (d.faturadoMedio || 0) + (d.faturadoNaoMedio || 0);
+
+                div.innerHTML = `
+                    <span class="date">${dateStr}</span>
+                    <span class="values">${d.estado || '--'} · ${d.municipio || '--'}</span>
+                    <span class="values">${d.prestador || '—'}</span>
+                    <span class="values">Faturado: ${formatNumber(totalFaturado)}</span>
+                    <button class="btn-load" data-id="${entry.id}">Carregar</button>
+                `;
+
+                div.querySelector('.btn-load').addEventListener('click', function () {
+                    const id = parseInt(this.dataset.id);
+                    const found = getAprovados().find(e => e.id === id);
+                    if (found) {
+                        loadDataToForm(found.data || found);
+                        showToast('success', 'Dados carregados!', 'Os dados foram carregados no formulário.');
+                    }
+                });
+
+                historyList.appendChild(div);
+            });
+        }
+
+        function loadDataToForm(data) {
+            document.getElementById('fieldEmpresa').value = data.prestador || '';
+            document.getElementById('fieldDataPreenchimento').value = data.dataPreenchimento || '';
+            document.getElementById('fieldEstado').value = data.estado || '';
+
+            const estado = data.estado;
+            if (estado) {
+                carregarMunicipiosFormulario(estado).then(() => {
+                    document.getElementById('fieldMunicipio').value = data.municipio || '';
+                });
+            }
+
+            document.getElementById('fieldFaturadoExportado').value = data.faturadoExportado || '';
+            document.getElementById('fieldFaturadoMedio').value = data.faturadoMedio || '';
+            document.getElementById('fieldFaturadoNaoMedio').value = data.faturadoNaoMedio || '';
+            document.getElementById('fieldNaoFaturadoMedio').value = data.naoFaturadoMedio || '';
+            document.getElementById('fieldNaoFaturadoNaoMedio').value = data.naoFaturadoNaoMedio || '';
+            document.getElementById('fieldPerdasAparentes').value = data.perdasAparentes || '';
+            document.getElementById('fieldPerdasReais').value = data.perdasReais || '';
+            updateLiteraryValues();
+        }
+
+        // ======================================================
+        // CARREGAR MUNICÍPIOS NO FORMULÁRIO
+        // ======================================================
+
+        async function carregarMunicipiosFormulario(siglaEstado) {
+            const select = document.getElementById('fieldMunicipio');
+            select.disabled = false;
+            select.innerHTML = '<option value="">Carregando...</option>';
+
+            if (siglaEstado === 'DF') {
+                select.innerHTML = '<option value="">Selecione uma RA...</option>';
+                DF_REGIOES_ADMINISTRATIVAS.forEach(ra => {
+                    const opt = document.createElement('option');
+                    opt.value = ra;
+                    opt.textContent = ra;
+                    select.appendChild(opt);
+                });
+                return;
+            }
+
+            const idIbge = ESTADOS_IBGE[siglaEstado];
+            if (!idIbge) {
+                select.innerHTML = '<option value="">Estado inválido</option>';
+                return;
+            }
+
+            try {
+                const resp = await fetch(
+                    `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${idIbge}/municipios?orderBy=nome`
+                );
+                const municipios = await resp.json();
+                select.innerHTML = '<option value="">Selecione um município...</option>';
+                municipios.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.nome;
+                    opt.textContent = m.nome;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error(e);
+                select.innerHTML = '<option value="">Erro ao carregar municípios</option>';
+            }
+        }
+
+        // ======================================================
+        // PAINEL — ABRIR / FECHAR
+        // ======================================================
+
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggleAddData');
+        const panel = document.getElementById('addDataPanel');
+        const cancelBtn = document.getElementById('cancelAddData');
+        const form = document.getElementById('addDataForm');
+        const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+        const historyContainer = document.getElementById('historyContainer');
+
+        function openPanel() {
+            panel.classList.add('open');
+            sidebar.classList.add('expanded');
+            toggleBtn.innerHTML = '<i class="fas fa-times-circle"></i> Fechar';
+
+            if (!document.getElementById('fieldDataPreenchimento').value) {
+                document.getElementById('fieldDataPreenchimento').value = new Date().toISOString().split('T')[0];
+            }
+
+            preencherCampos();
+            renderHistory();
+            historyContainer.style.display = 'block';
+        }
+
+        function closePanel() {
+            panel.classList.remove('open');
+            sidebar.classList.remove('expanded');
+            toggleBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar dados';
+            historyContainer.style.display = 'none';
+        }
+
+        function preencherCampos() {
+            const agregados = getDadosAgregadosAtuais();
+            if (!agregados || agregados.volumeEntrada === 0) {
+                updateLiteraryValues();
+                return;
+            }
+
+            document.getElementById('fieldFaturadoExportado').value = agregados.faturadoExportado || '';
+            document.getElementById('fieldFaturadoMedio').value = agregados.faturadoMedio || '';
+            document.getElementById('fieldFaturadoNaoMedio').value = agregados.faturadoNaoMedio || '';
+            document.getElementById('fieldNaoFaturadoMedio').value = agregados.naoFaturadoMedio || '';
+            document.getElementById('fieldNaoFaturadoNaoMedio').value = agregados.naoFaturadoNaoMedio || '';
+            document.getElementById('fieldPerdasAparentes').value = agregados.perdasAparentes || '';
+            document.getElementById('fieldPerdasReais').value = agregados.perdasReais || '';
+
+            updateLiteraryValues();
+        }
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            panel.classList.contains('open') ? closePanel() : openPanel();
+        });
+        cancelBtn.addEventListener('click', closePanel);
+
+        loadHistoryBtn.addEventListener('click', function () {
+            renderHistory();
+            const visible = historyContainer.style.display !== 'none';
+            historyContainer.style.display = visible ? 'none' : 'block';
+            this.innerHTML = visible
+                ? '<i class="fas fa-history"></i> Carregar histórico aprovado'
+                : '<i class="fas fa-chevron-up"></i> Ocultar histórico';
+        });
+
+        // ======================================================
+        // FORMULÁRIO — ESTADO → MUNICÍPIO EM CASCATA
+        // ======================================================
+
+        document.getElementById('fieldEstado').addEventListener('change', function () {
+            const sigla = this.value;
+            const select = document.getElementById('fieldMunicipio');
+
+            if (!sigla) {
+                select.innerHTML = '<option value="">Selecione um estado primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+            carregarMunicipiosFormulario(sigla);
+        });
+
+        // ======================================================
+        // ENVIO DO FORMULÁRIO
+        // ======================================================
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const data = {
+                prestador: document.getElementById('fieldEmpresa').value.trim(),
+                dataPreenchimento: document.getElementById('fieldDataPreenchimento').value,
+                estado: document.getElementById('fieldEstado').value,
+                municipio: document.getElementById('fieldMunicipio').value,
+                regiao: REGIOES_POR_ESTADO[document.getElementById('fieldEstado').value] || '',
+
+                faturadoExportado: parseFloat(document.getElementById('fieldFaturadoExportado').value) || 0,
+                faturadoMedio: parseFloat(document.getElementById('fieldFaturadoMedio').value) || 0,
+                faturadoNaoMedio: parseFloat(document.getElementById('fieldFaturadoNaoMedio').value) || 0,
+
+                naoFaturadoMedio: parseFloat(document.getElementById('fieldNaoFaturadoMedio').value) || 0,
+                naoFaturadoNaoMedio: parseFloat(document.getElementById('fieldNaoFaturadoNaoMedio').value) || 0,
+
+                perdasAparentes: parseFloat(document.getElementById('fieldPerdasAparentes').value) || 0,
+                perdasReais: parseFloat(document.getElementById('fieldPerdasReais').value) || 0
+            };
+
+            if (!data.prestador) {
+                showToast('warning', 'Campo obrigatório', 'Informe o nome da empresa/prestador.');
+                return;
+            }
+            if (!data.estado || !data.municipio || !data.dataPreenchimento) {
+                showToast('warning', 'Campos obrigatórios', 'Preencha Estado, Município/RA e Data.');
+                return;
+            }
+
+            const totalFaturado = data.faturadoExportado + data.faturadoMedio + data.faturadoNaoMedio;
+            const totalNaoFaturado = data.naoFaturadoMedio + data.naoFaturadoNaoMedio;
+            const totalPerdas = data.perdasAparentes + data.perdasReais;
+            const volumeEntrada = totalFaturado + totalNaoFaturado + totalPerdas;
+
+            if (volumeEntrada <= 0) {
+                showToast('warning', 'Volume inválido', 'O volume de entrada deve ser maior que zero.');
+                return;
+            }
+
+            data._volumeEntrada = volumeEntrada;
+            data._perdasPct = (totalPerdas / volumeEntrada) * 100;
+            data.ano = new Date(data.dataPreenchimento).getFullYear();
+
+            addToValidacaoQueue(data);
+
+            closePanel();
+            showToast('success', 'Enviado para validação!',
+                `${data.prestador} · ${data.municipio}/${data.estado} foi enviado para a fila de validação.`);
+
+            form.reset();
+            document.getElementById('fieldMunicipio').innerHTML = '<option value="">Selecione um estado primeiro</option>';
+            document.getElementById('fieldMunicipio').disabled = true;
+
+            // Zera os displays literários no formulário
+            ['displaySubmedicao','displayClandestinos','displayFraudes',
+             'displayVazamentosRamais','displayVazamentosRedes','displayVazamentosReservatorios']
+                .forEach(id => document.getElementById(id).value = '0');
+
+            renderHistory();
+            carregarFiltroAnos();
+            carregarFiltroRegioes();
+            aplicarFiltros();
+        });
+
+        // ======================================================
+        // VALORES LITERÁRIOS (preview) — CÁLCULO CORRIGIDO
+        // ======================================================
+        //
+        // As subdivisões são proporcionais ao TOTAL digitado em cada grupo.
+        // Fórmula: valor_subdivisao = total_grupo * (peso_subdivisao / soma_dos_pesos)
+
+        function updateLiteraryValues() {
+            const perdasAparentes = parseFloat(document.getElementById('fieldPerdasAparentes').value) || 0;
+            const perdasReais = parseFloat(document.getElementById('fieldPerdasReais').value) || 0;
+
+            // ----- PERDAS APARENTES -----
+            const apSub  = perdasAparentes * (PESOS_LITERARIOS.submedicao   / PESO_TOTAL_AP);
+            const apClan = perdasAparentes * (PESOS_LITERARIOS.clandestinos / PESO_TOTAL_AP);
+            const apFrau = perdasAparentes * (PESOS_LITERARIOS.fraudes      / PESO_TOTAL_AP);
+
+            document.getElementById('displaySubmedicao').value =
+                `${formatNumber(Math.round(apSub))} (${pctStr(PESOS_LITERARIOS.submedicao, PESO_TOTAL_AP)}% do total de PA)`;
+            document.getElementById('displayClandestinos').value =
+                `${formatNumber(Math.round(apClan))} (${pctStr(PESOS_LITERARIOS.clandestinos, PESO_TOTAL_AP)}% do total de PA)`;
+            document.getElementById('displayFraudes').value =
+                `${formatNumber(Math.round(apFrau))} (${pctStr(PESOS_LITERARIOS.fraudes, PESO_TOTAL_AP)}% do total de PA)`;
+
+            // ----- PERDAS REAIS -----
+            const prRam = perdasReais * (PESOS_LITERARIOS.vazamentosRamais         / PESO_TOTAL_PR);
+            const prRed = perdasReais * (PESOS_LITERARIOS.vazamentosRedes          / PESO_TOTAL_PR);
+            const prRes = perdasReais * (PESOS_LITERARIOS.vazamentosReservatorios  / PESO_TOTAL_PR);
+
+            document.getElementById('displayVazamentosRamais').value =
+                `${formatNumber(Math.round(prRam))} (${pctStr(PESOS_LITERARIOS.vazamentosRamais, PESO_TOTAL_PR)}% do total de PR)`;
+            document.getElementById('displayVazamentosRedes').value =
+                `${formatNumber(Math.round(prRed))} (${pctStr(PESOS_LITERARIOS.vazamentosRedes, PESO_TOTAL_PR)}% do total de PR)`;
+            document.getElementById('displayVazamentosReservatorios').value =
+                `${formatNumber(Math.round(prRes))} (${pctStr(PESOS_LITERARIOS.vazamentosReservatorios, PESO_TOTAL_PR)}% do total de PR)`;
+        }
+
+        ['fieldFaturadoExportado', 'fieldFaturadoMedio', 'fieldFaturadoNaoMedio',
+         'fieldNaoFaturadoMedio', 'fieldNaoFaturadoNaoMedio',
+         'fieldPerdasAparentes', 'fieldPerdasReais'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateLiteraryValues);
+        });
+
+        // ======================================================
+        // FILTROS HIERÁRQUICOS (ANO → REGIÃO → ESTADO → MUNICÍPIO)
+        // ======================================================
+
+        const anoOptions = document.getElementById('anoOptions');
+        const regiaoOptions = document.getElementById('regiaoOptions');
+        const estadoOptions = document.getElementById('estadoOptions');
+        const municipioOptions = document.getElementById('municipioOptions');
+        const filterStatusText = document.getElementById('filterStatusText');
+        const contextText = document.getElementById('contextText');
+        const summaryRecords = document.getElementById('summaryRecords');
+        const summaryYears = document.getElementById('summaryYears');
+
+        let filtrosAtivos = {
+            ano: '',
+            regiao: '',
+            estado: '',
+            municipio: ''
+        };
+
+        // --- Anos disponíveis
+        function getAnosDisponiveis() {
+            const aprovados = getAprovados();
+            const anos = new Set();
+            aprovados.forEach(entry => {
+                const d = entry.data || entry;
+                const ano = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : null);
+                if (ano) anos.add(String(ano));
+            });
+            if (anos.size === 0) anos.add(String(new Date().getFullYear()));
+            return [...anos].sort((a, b) => b - a);
+        }
+
+        function carregarFiltroAnos() {
+            const anos = getAnosDisponiveis();
+            anoOptions.innerHTML = '';
+
+            const labelTodos = document.createElement('label');
+            labelTodos.className = 'filter-option';
+            labelTodos.innerHTML = `
+                <input type="radio" name="anoFiltro" value="" ${filtrosAtivos.ano === '' ? 'checked' : ''}>
+                <em>Todos os anos</em>
+            `;
+            anoOptions.appendChild(labelTodos);
+
+            anos.forEach(ano => {
+                const label = document.createElement('label');
+                label.className = 'filter-option' + (filtrosAtivos.ano === ano ? ' checked' : '');
+                label.innerHTML = `
+                    <input type="radio" name="anoFiltro" value="${ano}" ${filtrosAtivos.ano === ano ? 'checked' : ''}>
+                    ${ano}
+                `;
+                anoOptions.appendChild(label);
+            });
+
+            anoOptions.querySelectorAll('input[name="anoFiltro"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    anoOptions.querySelectorAll('.filter-option').forEach(o => o.classList.remove('checked'));
+                    this.closest('.filter-option').classList.add('checked');
+                    filtrosAtivos.ano = this.value;
+                    // Reset dos níveis abaixo (as opções podem mudar)
+                    filtrosAtivos.regiao = '';
+                    filtrosAtivos.estado = '';
+                    filtrosAtivos.municipio = '';
+                    carregarFiltroRegioes();
+                    estadoOptions.innerHTML = '<span class="info-field-value empty">Selecione uma região</span>';
+                    municipioOptions.innerHTML = '<span class="info-field-value empty">Selecione um estado</span>';
+                    atualizarContexto();
+                    aplicarFiltros();
+                });
+            });
+
+            summaryYears.textContent = anos.length + ' ano(s)';
+        }
+
+        // --- Regiões disponíveis
+        function getRegioesDisponiveis() {
+            const aprovados = getAprovados();
+            const regioes = new Set();
+            aprovados.forEach(entry => {
+                const d = entry.data || entry;
+                const ano = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : null);
+                if (filtrosAtivos.ano && String(ano) !== String(filtrosAtivos.ano)) return;
+
+                const reg = d.regiao || REGIOES_POR_ESTADO[d.estado] || '';
+                if (reg) regioes.add(reg);
+            });
+            return [...regioes];
+        }
+
+        function carregarFiltroRegioes() {
+            const regioes = getRegioesDisponiveis();
+            regiaoOptions.innerHTML = '';
+
+            const labelTodas = document.createElement('label');
+            labelTodas.className = 'filter-option' + (filtrosAtivos.regiao === '' ? ' checked' : '');
+            labelTodas.innerHTML = `
+                <input type="radio" name="regiaoFiltro" value="" ${filtrosAtivos.regiao === '' ? 'checked' : ''}>
+                <em>Todas as regiões</em>
+            `;
+            regiaoOptions.appendChild(labelTodas);
+
+            const ordem = ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'];
+            ordem.filter(r => regioes.includes(r)).forEach(regiao => {
+                const label = document.createElement('label');
+                label.className = 'filter-option' + (filtrosAtivos.regiao === regiao ? ' checked' : '');
+                label.innerHTML = `
+                    <input type="radio" name="regiaoFiltro" value="${regiao}" ${filtrosAtivos.regiao === regiao ? 'checked' : ''}>
+                    ${regiao}
+                `;
+                regiaoOptions.appendChild(label);
+            });
+
+            regiaoOptions.querySelectorAll('input[name="regiaoFiltro"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    regiaoOptions.querySelectorAll('.filter-option').forEach(o => o.classList.remove('checked'));
+                    this.closest('.filter-option').classList.add('checked');
+                    filtrosAtivos.regiao = this.value;
+                    filtrosAtivos.estado = '';
+                    filtrosAtivos.municipio = '';
+                    carregarFiltroEstados();
+                    municipioOptions.innerHTML = '<span class="info-field-value empty">Selecione um estado</span>';
+                    atualizarContexto();
+                    aplicarFiltros();
+                });
+            });
+        }
+
+        // --- Estados disponíveis
+        function getEstadosDisponiveis() {
+            const aprovados = getAprovados();
+            const estados = new Set();
+            aprovados.forEach(entry => {
+                const d = entry.data || entry;
+                const ano = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : null);
+                if (filtrosAtivos.ano && String(ano) !== String(filtrosAtivos.ano)) return;
+
+                const reg = d.regiao || REGIOES_POR_ESTADO[d.estado] || '';
+                if (filtrosAtivos.regiao && reg !== filtrosAtivos.regiao) return;
+
+                if (d.estado) estados.add(d.estado);
+            });
+            return [...estados].sort();
+        }
+
+        function carregarFiltroEstados() {
+            const estados = getEstadosDisponiveis();
+            estadoOptions.innerHTML = '';
+
+            if (estados.length === 0) {
+                estadoOptions.innerHTML = '<span class="info-field-value empty">Nenhum estado disponível</span>';
+                return;
+            }
+
+            const labelTodos = document.createElement('label');
+            labelTodos.className = 'filter-option' + (filtrosAtivos.estado === '' ? ' checked' : '');
+            labelTodos.innerHTML = `
+                <input type="radio" name="estadoFiltro" value="" ${filtrosAtivos.estado === '' ? 'checked' : ''}>
+                <em>Todos os estados</em>
+            `;
+            estadoOptions.appendChild(labelTodos);
+
+            estados.forEach(sigla => {
+                const label = document.createElement('label');
+                label.className = 'filter-option' + (filtrosAtivos.estado === sigla ? ' checked' : '');
+                label.innerHTML = `
+                    <input type="radio" name="estadoFiltro" value="${sigla}" ${filtrosAtivos.estado === sigla ? 'checked' : ''}>
+                    ${sigla} — ${ESTADOS_NOMES[sigla]}
+                `;
+                estadoOptions.appendChild(label);
+            });
+
+            estadoOptions.querySelectorAll('input[name="estadoFiltro"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    estadoOptions.querySelectorAll('.filter-option').forEach(o => o.classList.remove('checked'));
+                    this.closest('.filter-option').classList.add('checked');
+                    filtrosAtivos.estado = this.value;
+                    filtrosAtivos.municipio = '';
+
+                    if (this.value) {
+                        carregarFiltroMunicipios(this.value);
+                    } else {
+                        municipioOptions.innerHTML = '<span class="info-field-value empty">Selecione um estado</span>';
+                    }
+                    atualizarContexto();
+                    aplicarFiltros();
+                });
+            });
+        }
+
+        // --- Municípios / RAs disponíveis
+        function getMunicipiosDisponiveis(sigla) {
+            const aprovados = getAprovados();
+            const municipios = new Set();
+            aprovados.forEach(entry => {
+                const d = entry.data || entry;
+                const ano = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : null);
+                if (filtrosAtivos.ano && String(ano) !== String(filtrosAtivos.ano)) return;
+
+                const reg = d.regiao || REGIOES_POR_ESTADO[d.estado] || '';
+                if (filtrosAtivos.regiao && reg !== filtrosAtivos.regiao) return;
+
+                if (d.estado === sigla && d.municipio) municipios.add(d.municipio);
+            });
+            return [...municipios].sort();
+        }
+
+        function carregarFiltroMunicipios(sigla) {
+            const municipios = getMunicipiosDisponiveis(sigla);
+            municipioOptions.innerHTML = '';
+
+            if (municipios.length === 0) {
+                municipioOptions.innerHTML = '<span class="info-field-value empty">Nenhum município/RA disponível</span>';
+                return;
+            }
+
+            const isDF = sigla === 'DF';
+            const labelTodos = document.createElement('label');
+            labelTodos.className = 'filter-option' + (filtrosAtivos.municipio === '' ? ' checked' : '');
+            labelTodos.innerHTML = `
+                <input type="radio" name="municipioFiltro" value="" ${filtrosAtivos.municipio === '' ? 'checked' : ''}>
+                <em>${isDF ? 'Todas as RAs' : 'Todos os municípios'}</em>
+            `;
+            municipioOptions.appendChild(labelTodos);
+
+            municipios.forEach(nome => {
+                const label = document.createElement('label');
+                label.className = 'filter-option' + (filtrosAtivos.municipio === nome ? ' checked' : '');
+                label.innerHTML = `
+                    <input type="radio" name="municipioFiltro" value="${nome}" ${filtrosAtivos.municipio === nome ? 'checked' : ''}>
+                    ${nome}
+                `;
+                municipioOptions.appendChild(label);
+            });
+
+            municipioOptions.querySelectorAll('input[name="municipioFiltro"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    municipioOptions.querySelectorAll('.filter-option').forEach(o => o.classList.remove('checked'));
+                    this.closest('.filter-option').classList.add('checked');
+                    filtrosAtivos.municipio = this.value;
+                    atualizarContexto();
+                    aplicarFiltros();
+                });
+            });
+        }
+
+        // --- Contexto
+        function atualizarContexto() {
+            const { ano, regiao, estado, municipio } = filtrosAtivos;
+            let ctx = '';
+            const anoLabel = ano ? ano : 'Todos os anos';
+
+            if (municipio) {
+                const tipo = estado === 'DF' ? 'RA' : 'Município';
+                ctx = `${tipo}: ${municipio} · ${estado} · ${anoLabel}`;
+            } else if (estado) {
+                ctx = `${estado} (todos os ${estado === 'DF' ? 'RAs' : 'municípios'}) · ${anoLabel}`;
+            } else if (regiao) {
+                ctx = `Região ${regiao} · ${anoLabel}`;
+            } else {
+                ctx = `Brasil · ${anoLabel}`;
+            }
+
+            filterStatusText.textContent = ctx;
+            contextText.textContent = ctx;
+        }
+
+        // ======================================================
+        // AGREGAÇÃO E APLICAÇÃO DOS FILTROS
+        // ======================================================
+
+        function getRegistrosFiltrados() {
+            const aprovados = getAprovados();
+            const { ano, regiao, estado, municipio } = filtrosAtivos;
+
+            return aprovados.filter(entry => {
+                const d = entry.data || entry;
+
+                const anoRegistro = d.ano || (d.dataPreenchimento ? new Date(d.dataPreenchimento).getFullYear() : null);
+                if (ano && anoRegistro && String(anoRegistro) !== String(ano)) return false;
+
+                if (regiao) {
+                    const regRegistro = d.regiao || REGIOES_POR_ESTADO[d.estado] || '';
+                    if (regRegistro !== regiao) return false;
+                }
+
+                if (estado && d.estado !== estado) return false;
+                if (municipio && d.municipio !== municipio) return false;
+
+                return true;
+            });
+        }
+
+        function getDadosAgregadosAtuais() {
+            const registros = getRegistrosFiltrados();
+            const acc = {
+                faturadoExportado: 0, faturadoMedio: 0, faturadoNaoMedio: 0,
+                naoFaturadoMedio: 0, naoFaturadoNaoMedio: 0,
+                perdasAparentes: 0, perdasReais: 0,
+                volumeEntrada: 0
+            };
+            registros.forEach(entry => {
+                const d = entry.data || entry;
+                acc.faturadoExportado += d.faturadoExportado || 0;
+                acc.faturadoMedio += d.faturadoMedio || 0;
+                acc.faturadoNaoMedio += d.faturadoNaoMedio || 0;
+                acc.naoFaturadoMedio += d.naoFaturadoMedio || 0;
+                acc.naoFaturadoNaoMedio += d.naoFaturadoNaoMedio || 0;
+                acc.perdasAparentes += d.perdasAparentes || 0;
+                acc.perdasReais += d.perdasReais || 0;
+            });
+            acc.volumeEntrada =
+                acc.faturadoExportado + acc.faturadoMedio + acc.faturadoNaoMedio +
+                acc.naoFaturadoMedio + acc.naoFaturadoNaoMedio +
+                acc.perdasAparentes + acc.perdasReais;
+            return acc;
+        }
+
+        function aplicarFiltros() {
+            const agg = getDadosAgregadosAtuais();
+            const totalFaturado = agg.faturadoExportado + agg.faturadoMedio + agg.faturadoNaoMedio;
+            const totalNaoFaturado = agg.naoFaturadoMedio + agg.naoFaturadoNaoMedio;
+            const totalPerdas = agg.perdasAparentes + agg.perdasReais;
+            const volumeEntrada = agg.volumeEntrada;
+            const consumoAutorizado = totalFaturado + totalNaoFaturado;
+
+            const pct = (v) => volumeEntrada > 0 ? ((v / volumeEntrada) * 100).toFixed(2) : '0.00';
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+            // ---- Blocos principais ----
+            setTxt('displayVolumeEntrada', formatNumber(volumeEntrada));
+            setTxt('displayConsumoAutorizado', formatNumber(consumoAutorizado));
+            setTxt('pctConsumoAutorizado', pct(consumoAutorizado) + '% VE');
+            setTxt('displayPerdasAgua', formatNumber(totalPerdas));
+            setTxt('pctPerdasAgua', pct(totalPerdas) + '% VE');
+            setTxt('displayFaturado', formatNumber(totalFaturado));
+            setTxt('pctFaturado', pct(totalFaturado) + '% VE');
+            setTxt('displayNaoFaturado', formatNumber(totalNaoFaturado));
+            setTxt('pctNaoFaturado', pct(totalNaoFaturado) + '% VE');
+            setTxt('displayPerdasAparentes', formatNumber(agg.perdasAparentes));
+            setTxt('pctPerdasAparentes', pct(agg.perdasAparentes) + '% VE');
+            setTxt('displayPerdasReais', formatNumber(agg.perdasReais));
+            setTxt('pctPerdasReais', pct(agg.perdasReais) + '% VE');
+
+            // ---- Volume Faturado detalhado ----
+            setTxt('displayFaturadoExportado', formatNumber(agg.faturadoExportado));
+            setTxt('displayFaturadoMedio', formatNumber(agg.faturadoMedio));
+            setTxt('displayFaturadoNaoMedio', formatNumber(agg.faturadoNaoMedio));
+            setTxt('displayNaoFaturadoMedio', formatNumber(agg.naoFaturadoMedio));
+            setTxt('displayNaoFaturadoNaoMedio', formatNumber(agg.naoFaturadoNaoMedio));
+
+            // ---- Subdivisões literárias (proporcionais ao total de cada grupo) ----
+            // PERDAS APARENTES
+            const apSub  = agg.perdasAparentes * (PESOS_LITERARIOS.submedicao   / PESO_TOTAL_AP);
+            const apClan = agg.perdasAparentes * (PESOS_LITERARIOS.clandestinos / PESO_TOTAL_AP);
+            const apFrau = agg.perdasAparentes * (PESOS_LITERARIOS.fraudes      / PESO_TOTAL_AP);
+
+            setTxt('displaySubmedicaoValor', formatNumber(Math.round(apSub)));
+            setTxt('displayClandestinosValor', formatNumber(Math.round(apClan)));
+            setTxt('displayFraudesValor', formatNumber(Math.round(apFrau)));
+
+            // PERDAS REAIS
+            const prRam = agg.perdasReais * (PESOS_LITERARIOS.vazamentosRamais        / PESO_TOTAL_PR);
+            const prRed = agg.perdasReais * (PESOS_LITERARIOS.vazamentosRedes         / PESO_TOTAL_PR);
+            const prRes = agg.perdasReais * (PESOS_LITERARIOS.vazamentosReservatorios / PESO_TOTAL_PR);
+
+            setTxt('displayVazamentosRamaisValor', formatNumber(Math.round(prRam)));
+            setTxt('displayVazamentosRedesValor', formatNumber(Math.round(prRed)));
+            setTxt('displayVazamentosReservatoriosValor', formatNumber(Math.round(prRes)));
+
+            // ---- Percentuais da coluna 5 (fatia de cada linha no Volume de Entrada) ----
+            setTxt('pctCol5_1', pct(agg.faturadoExportado) + '%');
+            setTxt('pctCol5_2', pct(agg.faturadoMedio) + '%');
+            setTxt('pctCol5_3', pct(agg.faturadoNaoMedio) + '%');
+            setTxt('pctCol5_4', pct(agg.naoFaturadoMedio) + '%');
+            setTxt('pctCol5_5', pct(agg.naoFaturadoNaoMedio) + '%');
+            setTxt('pctCol5_6', pct(apSub) + '%');
+            setTxt('pctCol5_7', pct(apClan) + '%');
+            setTxt('pctCol5_8', pct(apFrau) + '%');
+            setTxt('pctCol5_9', pct(prRam) + '%');
+            setTxt('pctCol5_10', pct(prRed) + '%');
+            setTxt('pctCol5_11', pct(prRes) + '%');
+
+            // ---- Totais (coluna 6) ----
+            setTxt('displayTotalFaturado', formatNumber(totalFaturado));
+            setTxt('pctTotalFaturado', pct(totalFaturado) + '% VE');
+            setTxt('displayTotalNaoFaturado', formatNumber(totalNaoFaturado + totalPerdas));
+            setTxt('pctTotalNaoFaturado', pct(totalNaoFaturado + totalPerdas) + '% VE');
+
+            // ---- Resumo ----
+            const registros = getRegistrosFiltrados();
+            summaryRecords.textContent = registros.length;
+
+            const footerInfo = document.getElementById('footerDataInfo');
+            footerInfo.textContent = registros.length === 0
+                ? 'Nenhum dado aprovado neste contexto'
+                : `${registros.length} registro(s) aprovado(s)`;
+        }
+
+        // ======================================================
+        // RESET
+        // ======================================================
+
+        document.getElementById('btnResetHierarchy').addEventListener('click', () => {
+            filtrosAtivos = { ano: '', regiao: '', estado: '', municipio: '' };
+
+            carregarFiltroAnos();
+            carregarFiltroRegioes();
+            estadoOptions.innerHTML = '<span class="info-field-value empty">Selecione uma região</span>';
+            municipioOptions.innerHTML = '<span class="info-field-value empty">Selecione um estado</span>';
+
+            atualizarContexto();
+            aplicarFiltros();
+            showToast('info', 'Filtros resetados', 'Exibindo dados gerais do Brasil.');
+        });
+
+        document.getElementById('btnClearAll').addEventListener('click', () => {
+            document.getElementById('btnResetHierarchy').click();
+        });
+
+        // ======================================================
+        // EXPORTAÇÃO
+        // ======================================================
+
+        const exportMenuBtn = document.getElementById('exportMenuBtn');
+        const exportDropdown = document.getElementById('exportDropdown');
+
+        exportMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportDropdown.classList.toggle('open');
+        });
+        document.addEventListener('click', () => exportDropdown.classList.remove('open'));
+        exportDropdown.addEventListener('click', (e) => e.stopPropagation());
+
+        function getMatrixData() {
+            const fields = [
+                ['displayVolumeEntrada', 'Volume de Entrada'],
+                ['displayConsumoAutorizado', 'Consumo Autorizado'],
+                ['displayPerdasAgua', 'Perdas de Água'],
+                ['displayFaturado', 'Consumo Autorizado Faturado'],
+                ['displayNaoFaturado', 'Consumo Autorizado Não Faturado'],
+                ['displayPerdasAparentes', 'Perdas Aparentes'],
+                ['displayPerdasReais', 'Perdas Reais'],
+                ['displayFaturadoExportado', 'Volume Faturado Exportado'],
+                ['displayFaturadoMedio', 'Volume Faturado Médio'],
+                ['displayFaturadoNaoMedio', 'Volume Faturado Não Médio'],
+                ['displayNaoFaturadoMedio', 'Volume Não Faturado Médio'],
+                ['displayNaoFaturadoNaoMedio', 'Volume Não Faturado Não Médio'],
+                ['displaySubmedicaoValor', 'Submedição'],
+                ['displayClandestinosValor', 'Clandestinos / Falhas Cadastro'],
+                ['displayFraudesValor', 'Fraudes'],
+                ['displayVazamentosRamaisValor', 'Vazamentos em Ramais'],
+                ['displayVazamentosRedesValor', 'Vazamentos em Redes'],
+                ['displayVazamentosReservatoriosValor', 'Vazamentos em Reservatórios'],
+                ['displayTotalFaturado', 'Volume Faturado (Total)'],
+                ['displayTotalNaoFaturado', 'Volume Não Faturado (Total)']
+            ];
+            const data = {};
+            fields.forEach(([id, label]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const num = parseNumber(el.textContent);
+                    data[label] = isNaN(num) ? el.textContent : num;
+                }
+            });
+            return data;
+        }
+
+        function exportCSV() {
+            const data = getMatrixData();
+            let csv = `"Contexto","${filterStatusText.textContent}"\n`;
+            csv += `"Ano","${filtrosAtivos.ano || 'Todos'}"\n`;
+            csv += `"Região","${filtrosAtivos.regiao || 'Todas'}"\n`;
+            csv += `"Estado","${filtrosAtivos.estado || 'Todos'}"\n`;
+            csv += `"Município/RA","${filtrosAtivos.municipio || 'Todos'}"\n\n`;
+            csv += 'Categoria,Valor (m³/ano)\n';
+            for (const [k, v] of Object.entries(data)) {
+                const val = typeof v === 'number' ? v.toLocaleString('pt-BR') : v;
+                csv += `"${k}","${val}"\n`;
+            }
+            downloadFile(csv, 'balanco_hidrico.csv', 'text/csv');
+            showToast('success', 'CSV exportado', 'Arquivo gerado com sucesso!');
+        }
+
+        function exportExcel() {
+            const data = getMatrixData();
+            let html = `<html><head><meta charset="UTF-8">
+                <style>th{background:#0a2558;color:#fff;} td,th{border:1px solid #ccc;padding:6px 12px;}</style>
+                </head><body><h2>Balanço Hídrico</h2>
+                <p><strong>Contexto:</strong> ${filterStatusText.textContent}</p>
+                <table><tr><th>Categoria</th><th>Valor (m³/ano)</th></tr>`;
+            for (const [k, v] of Object.entries(data)) {
+                const val = typeof v === 'number' ? v.toLocaleString('pt-BR') : v;
+                html += `<tr><td>${k}</td><td>${val}</td></tr>`;
+            }
+            html += `</table></body></html>`;
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'balanco_hidrico.xlsx';
+            a.click(); URL.revokeObjectURL(url);
+            showToast('success', 'Excel exportado', 'Arquivo gerado com sucesso!');
+        }
+
+        function exportPDF() {
+            window.print();
+            showToast('info', 'Impressão', 'Relatório enviado para impressão.');
+        }
+
+        function copyToClipboard() {
+            const data = getMatrixData();
+            let text = `BALANÇO HÍDRICO — ${filterStatusText.textContent}\n`;
+            text += '='.repeat(60) + '\n';
+            for (const [k, v] of Object.entries(data)) {
+                const val = typeof v === 'number' ? v.toLocaleString('pt-BR') : v;
+                text += `${k.padEnd(35)}: ${val} m³/ano\n`;
+            }
+            navigator.clipboard.writeText(text)
+                .then(() => showToast('success', 'Copiado!', 'Dados copiados.'))
+                .catch(() => showToast('error', 'Erro', 'Não foi possível copiar.'));
+        }
+
+        function downloadFile(content, name, mime) {
+            const blob = new Blob([content], { type: mime + ';charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = name; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        document.querySelectorAll('.export-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const format = this.dataset.format;
+                exportDropdown.classList.remove('open');
+                if (format === 'csv') exportCSV();
+                else if (format === 'excel') exportExcel();
+                else if (format === 'pdf' || format === 'print') exportPDF();
+                else if (format === 'copy') copyToClipboard();
+            });
+        });
+
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // ======================================================
+        // INICIALIZAÇÃO
+        // ======================================================
+
+        carregarFiltroAnos();
+        carregarFiltroRegioes();
+        atualizarContexto();
+        aplicarFiltros();
+        renderHistory();
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'balancoHidricoHistory' || e.key === 'validacaoData') {
+                carregarFiltroAnos();
+                carregarFiltroRegioes();
+                aplicarFiltros();
+                renderHistory();
+            }
+        });
+
+        showToast('info', 'Sistema pronto', 'Subdivisões literárias proporcionais ativas.');
+    </script>
+
+</body>
+
+</html>
